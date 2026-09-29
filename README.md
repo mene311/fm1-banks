@@ -72,6 +72,17 @@ reply, so a successful send is silent. Pick the bank, hold SAVE.
 Either way, SAVE is what makes it stick. Skip it and the bank is gone at
 power-off.
 
+**One bank at a time.** The FM-1 stages an incoming bank in a single buffer and
+waits for you to choose A, B, C or D. A second bank arriving before you have
+chosen overwrites that buffer, so only the last one is left. There is no bank
+number in the message and no queue on the device, so the order has to be send,
+choose, SAVE, repeat. `--wait` exists for this:
+
+```bash
+python3 fm1_send_bank.py banks/FM-1_acid_techno.syx --wait 10   # pause 10s
+python3 fm1_send_bank.py banks/FM-1_acid_techno.syx --wait      # wait for Enter
+```
+
 ## Format notes
 
 Standard Yamaha DX7 32-voice bulk dump, 4104 bytes:

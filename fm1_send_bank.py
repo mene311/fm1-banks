@@ -90,8 +90,10 @@ def main() -> int:
     ap.add_argument("--port", help="ALSA port name, e.g. 36:0 or 'FM-1 MIDI 1'")
     ap.add_argument("--channel", type=int, default=1, choices=range(1, 17))
     ap.add_argument("--dry-run", action="store_true", help="build the message, send nothing")
-    ap.add_argument("--wait", action="store_true",
-                    help="after sending, wait for Enter (so you can pick a bank and SAVE)")
+    ap.add_argument("--wait", type=float, nargs="?", const=0, default=None,
+                    metavar="SECONDS",
+                    help="after sending, pause for SECONDS so you can pick a bank and "
+                         "hold SAVE (bare --wait waits for Enter instead)")
     args = ap.parse_args()
 
     path = Path(args.bank)
@@ -140,13 +142,23 @@ def main() -> int:
     out.close_port()
 
     print("waiting : pick the bank on the FM-1 (A/B/C/D), hold SAVE")
-    if args.wait:
+    if args.wait is None:
+        print("          pass --wait to pause here before the next bank")
+    elif args.wait > 0:
+        n = args.wait
+        print(f"          pausing {n:g}s", end="", flush=True)
+        try:
+            for _ in range(int(n)):
+                time.sleep(1)
+                print(".", end="", flush=True)
+        except KeyboardInterrupt:
+            print(" interrupted", end="")
+        print()
+    else:
         try:
             input("          press Enter when saved > ")
         except EOFError:
             pass
-    else:
-        print("          run with --wait to pause here for the next one")
     return 0
 
 
