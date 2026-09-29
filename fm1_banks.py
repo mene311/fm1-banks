@@ -19,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -389,6 +390,55 @@ def read_voice_body(path: Path) -> bytes:
     raise ValueError(f"unexpected bank size {len(data)} for {path}")
 
 
+# Collections that are DERIVED views over the others rather than primary sources.
+# _Best_Of is a machine-made categorised re-sort: every voice in it is a
+# byte-for-byte copy of a voice in one of the real collections. Attributing a
+# patch to _Best_Of therefore says nothing about where it came from, so it is
+# excluded when resolving an origin.
+DERIVED_COLLECTIONS = {"_Best_Of"}
+
+
+def origin_index(root: Path) -> dict[str, list[str]]:
+    """Map the 118 parameter bytes of every voice to the collections holding it.
+
+    Keyed on parameters only, not the whole voice: the generator rewrites the
+    10-byte name (control characters and runs of whitespace are collapsed), so
+    a shipped voice no longer byte-matches its source name and a full-voice
+    hash would miss it.
+
+    Most DX7 patches exist in several collections -- the same voice was traded
+    around on floppies and net archives for decades -- so this returns a list,
+    not one name. Callers must not present an arbitrary pick as fact.
+    """
+    index: dict[str, set[str]] = {}
+    for dirpath, _, filenames in os.walk(root):
+        for f in filenames:
+            if not f.lower().endswith(".syx"):
+                continue
+            p = Path(dirpath) / f
+            rel = str(p.relative_to(root))
+            collection = rel.replace("\\", "/").split("/", 1)[0]
+            if collection in DERIVED_COLLECTIONS:
+                continue
+            try:
+                data = p.read_bytes()
+            except OSError:
+                continue
+            if len(data) == 4104 and data[:6] == bytes([0xF0, 0x43, 0x00, 0x09, 0x20, 0x00]):
+                body = data[6:6 + 4096]
+            elif len(data) == 4096:
+                body = data
+            else:
+                continue
+            for n in range(32):
+                v = body[n * 128:(n + 1) * 128]
+                if len(v) < 128 or not any(v[:118]):
+                    continue
+                params = bytes(b & 0x7F for b in v[:118])
+                index.setdefault(hashlib.sha256(params).hexdigest(), set()).add(collection)
+    return {k: sorted(v) for k, v in index.items()}
+
+
 # Voices whose source bytes had to be masked to 7 bits, as (relpath, index).
 # Filled by scan_library; reported by main so a bad collection is visible rather
 # than silently repaired.
@@ -556,25 +606,44 @@ def main() -> None:
     if args.only:
         themes = {k: v for k, v in THEMES.items() if k in args.only}
 
+    print("[*] resolving patch origins ...")
+    origins = origin_index(library)
+    print(f"[*] {len(origins)} distinct voice signatures, excluding "
+          f"{', '.join(sorted(DERIVED_COLLECTIONS))}")
+
     # Provenance cannot live in the bank: a DX7 voice is 128 fixed bytes with a
     # 10-character name, so the source of each patch is written alongside as a
     # sidecar. build_gallery.py joins it back in for the library page.
+    #
+    # Where the patch was selected from (_Best_Of) is NOT where it came from,
+    # so the origin is resolved through the derived layer to the real
+    # collection(s). See origin_index().
     provenance: dict[str, list] = {}
+    unresolved = 0
 
     for key, spec in themes.items():
         voices = select(rows, spec["categories"], limit=32)
         bank = build_bank(voices, library)
         outfile = out / f"FM-1_{key}.syx"
         outfile.write_bytes(bank)
-        provenance[key] = [
-            {
+        entries = []
+        body = bank[6:6 + 4096]
+        for slot, (_, path, idx) in enumerate(voices):
+            params = bytes(b & 0x7F for b in body[slot * 128:slot * 128 + 118])
+            found = origins.get(hashlib.sha256(params).hexdigest(), [])
+            if not found:
+                unresolved += 1
+            entries.append({
                 "collection": path.split("/", 1)[0],
                 "file": path,
                 "index": idx,
-            }
-            for _, path, idx in voices
-        ]
+                "origins": found,
+            })
+        provenance[key] = entries
         print(f"[+] {key}: {len(voices)} voices -> {outfile.name}")
+
+    if unresolved:
+        print(f"[!] {unresolved} patches could not be traced to a primary collection")
 
     prov_file = out / "provenance.json"
     prov_file.write_text(json.dumps(provenance, indent=2) + "\n")

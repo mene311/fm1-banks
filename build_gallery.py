@@ -85,13 +85,27 @@ def write_patch_index() -> None:
                 "d": base64.b64encode(voice).decode("ascii"),
             }
             if i < len(bank_prov):
-                col = bank_prov[i]["collection"]
-                if col not in col_index:
-                    col_index[col] = len(collections)
-                    collections.append(col)
-                row["c"] = col_index[col]
-                row["f"] = bank_prov[i]["file"]
-                row["s"] = bank_prov[i]["index"]
+                entry = bank_prov[i]
+                origins = entry.get("origins") or []
+                # "Where it came from" is the resolved origin, not the derived
+                # folder it was selected out of. Where several collections
+                # carry the same voice -- common, since these patches were
+                # traded around for decades -- the row names the first and the
+                # rest go in the title, rather than picking one and implying
+                # certainty that does not exist.
+                if not origins:
+                    origins = [entry["collection"]]
+                idxs = []
+                for c2 in origins:
+                    if c2 not in col_index:
+                        col_index[c2] = len(collections)
+                        collections.append(c2)
+                    idxs.append(col_index[c2])
+                row["c"] = idxs[0]
+                row["f"] = entry["file"]
+                row["s"] = entry["index"]
+                if len(idxs) > 1:
+                    row["o"] = idxs
             rows.append(row)
 
     (DOCS / "patches.json").write_text(

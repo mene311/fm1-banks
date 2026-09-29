@@ -128,6 +128,23 @@ python3 fm1_banks.py --library /path/to/dx7cartridges --out ./banks --only organ
 python3 build_gallery.py      # refresh docs/banks.json and docs/banks/
 ```
 
+Alongside the banks this writes `banks/provenance.json`, which records where each
+of the 832 patches came from. A DX7 voice is 128 fixed bytes with a 10-character
+name, so there is nowhere in the file to put attribution; it travels as a
+sidecar and the gallery joins it back in.
+
+Provenance needs care, because the obvious answer is wrong. Patches are drawn
+from `_Best_Of/`, a machine-made categorised re-sort in which **every voice is a
+byte-for-byte copy** of a voice held elsewhere — so `_Best_Of` is a derived view,
+not a source, and naming it says nothing about origin. The generator therefore
+resolves each patch through that layer to the real collection holding it.
+
+The second complication is that most of these patches have **no single origin**:
+they were traded around on floppies and net archives for decades, and 605 of the
+832 exist in two to seven collections at once. Naming one would be inventing a
+fact, so the gallery names the first, shows `+N more`, and lists the rest in the
+tooltip. Treat the origin as "known to be carried by", not "written by".
+
 Audio previews are rendered with `render_demo.py`, which uses
 [`dexed-py`](https://pypi.org/project/dexed-py/) — the real Dexed engine, the same
 one the FM-1's FM side is built on.

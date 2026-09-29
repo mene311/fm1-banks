@@ -397,15 +397,29 @@ function b64ToBytes(b64){
 function ci(s){ return String(s).toLowerCase(); }
 
 function sourceOf(p){
-  // "from <collection>, <file> #<slot>" -- the file path can be long, so the
-  // table shows the collection and the full path sits in the title attribute.
+  // Where the patch actually came from -- resolved through _Best_Of, which is
+  // a derived re-sort, not a source. When several collections carry the same
+  // voice the row names one and the title lists all of them, rather than
+  // implying a single origin that the data cannot support.
+  //
+  // p.f is the file we SELECTED the patch from, which may sit under a derived
+  // layer; it is useful for finding the patch again, but it is not provenance,
+  // so it is labelled as the selected file rather than passed off as origin.
   const col = (p.c === undefined) ? null : patchCollections[p.c];
   if(!col) return {short:'', full:''};
   const file = p.f ? p.f.split('/').pop() : '';
   const slot = (p.s === undefined) ? '' : ' #' + (p.s + 1);
+  const others = (p.o && p.o.length > 1)
+    ? patchCollections.filter((_,i) => p.o.includes(i) && i !== p.c)
+    : [];
+  const alsoIn = others.length ? ` · +${others.length} more` : '';
+  const lines = [
+    `Origin: ${col}`, ...(others.length ? [`Also present in: ${others.join(', ')}`] : []),
+    `Selected from: ${p.f || '?'}${slot}`,
+  ];
   return {
-    short: col + (file ? ' \u00b7 ' + file : '') + slot,
-    full: col + (p.f ? ' \u2014 ' + p.f : '') + slot,
+    short: col + (file ? ' \u00b7 ' + file : '') + slot + alsoIn,
+    full: lines.join('\n'),
   };
 }
 
