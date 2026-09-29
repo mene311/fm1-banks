@@ -388,6 +388,12 @@ def read_voice_body(path: Path) -> bytes:
     raise ValueError(f"unexpected bank size {len(data)} for {path}")
 
 
+# Voices whose source bytes had to be masked to 7 bits, as (relpath, index).
+# Filled by scan_library; reported by main so a bad collection is visible rather
+# than silently repaired.
+QUARANTINE: list[tuple[str, int]] = []
+
+
 def scan_library(root: Path) -> list[tuple[str, int, str]]:
     """Return (relpath, voice_index, name) for every voice in every 32-voice bank."""
     rows: list[tuple[str, int, str]] = []
@@ -411,14 +417,22 @@ def scan_library(root: Path) -> list[tuple[str, int, str]]:
                 v = body[n * 128:(n + 1) * 128]
                 if len(v) < 128:
                     continue
-                # A few cartridges in the wild carry bytes >= 0x80 inside the
-                # voice payload — real bit damage, not padding. SysEx data is
-                # 7-bit, so such a voice cannot be transmitted at all: WebMIDI
-                # rejects the whole bank with "System exclusive message
-                # contains a status byte at index N". Skip the voice so a clean
-                # copy of the same patch, if one exists, is selected instead.
-                if any(b >= 0x80 for b in v[:118]):
-                    continue
+                # Some cartridges in the wild carry bytes >= 0x80 across an
+                # entire voice. SysEx data is 7-bit, so such a voice cannot be
+                # transmitted at all: WebMIDI rejects the whole bank with
+                # "System exclusive message contains a status byte at index N".
+                #
+                # These are not random bit rot — they are 8-bit ASCII that was
+                # written into a 7-bit container ("Gl\xe9\xe4\xe5\xf0i\xe1no" for
+                # "Glidepiano", "pi\xe3k\xf9 l\xefw" for "picky low"). The stowaway
+                # high bit is meaningless, so clearing it recovers both the name
+                # and the parameter bytes. Recovery is preferred over skipping:
+                # 27 of the 30 affected patch names have a clean twin elsewhere,
+                # but 3 exist *only* in corrupt form, and dropping them loses
+                # real patches.
+                if any(b >= 0x80 for b in v):
+                    v = bytes(b & 0x7F for b in v)
+                    QUARANTINE.append((rel, n))
                 nm = v[118:128].split(b"\x00")[0].decode("latin-1")
                 nm = clean_name(nm)
                 if nm:
@@ -530,6 +544,12 @@ def main() -> None:
     print(f"[*] scanning {library} ...")
     rows = scan_library(library)
     print(f"[*] {len(rows)} voices indexed")
+    if QUARANTINE:
+        files = {rel for rel, _ in QUARANTINE}
+        print(f"[!] {len(QUARANTINE)} voices in {len(files)} files had bytes >= 0x80 "
+              f"and were masked to 7 bits:")
+        for rel, n in QUARANTINE:
+            print(f"      {rel}  voice {n}")
 
     themes = THEMES
     if args.only:
