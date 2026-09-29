@@ -46,7 +46,6 @@
 <a href="#banks">Banks</a>
 <a href="#builder">Build your own</a>
 <a href="#install">Install</a>
-<a href="#format">Format</a>
 <a href="https://github.com/mene311/fm1-banks">GitHub</a>
 </nav>
 </div></div>
@@ -153,24 +152,6 @@
       </ol>
       <p class="dim" style="margin-top:10px;font-size:11.5px">Four banks fill slots A&#8211;D (1&#8211;32, 33&#8211;64, 65&#8211;96, 97&#8211;128). Presets already on the device in a bank you overwrite are replaced.</p>
       <p class="dim" style="margin-top:10px;font-size:11.5px">The editor is <a href="https://github.com/benny-sparra/fm1-dx7-patch-importer" target="_blank" rel="noopener">open source</a> and does more than import. If Chrome will not hand over the MIDI port, the repo also ships <code>fm1_send_bank.py</code>, which writes a bank over ALSA from a terminal with no browser involved.</p>
-    </div>
-  </section>
-
-  <section class="panel" id="format">
-    <div class="panel-head">
-      <h2>Format</h2>
-      <span class="hint">Two things that break hand-built DX7 banks. Both handled here.</span>
-    </div>
-    <div class="panel-body">
-      <p style="font-size:12px;color:var(--chrome-text-dim);max-width:80ch">
-        Standard Yamaha DX7 32-voice bulk dump, 4104 bytes:
-        <code>F0 43 00 09 20 00 &lt;4096&gt; &lt;checksum&gt; F7</code>.
-        Two details matter.
-      </p>
-      <ol class="steps" style="margin-top:10px">
-        <li><strong>Checksum.</strong> M-VAVE's own dumps compute <code>(-sum(4096 voice bytes)) &amp; 0x7F</code>, leaving the six header bytes out. The textbook Yamaha checksum, which includes them, gets rejected as <span class="dim">"this file looks damaged"</span>.</li>
-        <li><strong>Names.</strong> Some original DX7 patches pad the patch name with <code>0x7F</code> bytes. Strict parsers reject a bank containing those, so every name here is reduced to printable ASCII before writing.</li>
-      </ol>
     </div>
   </section>
 
