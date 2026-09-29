@@ -411,6 +411,14 @@ def scan_library(root: Path) -> list[tuple[str, int, str]]:
                 v = body[n * 128:(n + 1) * 128]
                 if len(v) < 128:
                     continue
+                # A few cartridges in the wild carry bytes >= 0x80 inside the
+                # voice payload — real bit damage, not padding. SysEx data is
+                # 7-bit, so such a voice cannot be transmitted at all: WebMIDI
+                # rejects the whole bank with "System exclusive message
+                # contains a status byte at index N". Skip the voice so a clean
+                # copy of the same patch, if one exists, is selected instead.
+                if any(b >= 0x80 for b in v[:118]):
+                    continue
                 nm = v[118:128].split(b"\x00")[0].decode("latin-1")
                 nm = clean_name(nm)
                 if nm:
@@ -494,7 +502,11 @@ def build_bank(voices, library: Path) -> bytes:
             voice = bytearray(bank_body[idx * 128:(idx + 1) * 128])
             raw = voice[118:128].split(b"\x00")[0].decode("latin-1")
             voice[118:128] = clean_name(raw)[:10].encode("latin-1").ljust(10, b" ")
-            body += voice
+            # Final safety net. Corrupt voices are filtered out at index time,
+            # so this should never fire; it guarantees the message is valid
+            # SysEx (7-bit data) even if a source file slips through, since a
+            # single byte >= 0x80 makes WebMIDI reject the entire bank.
+            body += bytes(b & 0x7F for b in voice)
         else:
             body += bytes(128)
     header = bytes([0xF0, 0x43, 0x00, 0x09, 0x20, 0x00])

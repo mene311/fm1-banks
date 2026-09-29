@@ -88,7 +88,7 @@ python3 fm1_send_bank.py banks/FM-1_acid_techno.syx --wait      # wait for Enter
 Standard Yamaha DX7 32-voice bulk dump, 4104 bytes:
 `F0 43 00 09 20 00 <4096 voice bytes> <checksum> F7`.
 
-Two details caught us while making these:
+Three details caught us while making these:
 
 **Checksum.** M-VAVE's own dumps compute
 `(-sum(the 4096 voice bytes)) & 0x7F`, with the 6-byte header left out. Using the
@@ -98,6 +98,16 @@ the editor with "This file looks damaged."
 **Names.** Some original DX7 patches pad the patch name with `0x7F` bytes. Parsers
 that validate strictly reject a bank containing those, so every name here is
 reduced to printable ASCII before the file is written.
+
+**7-bit data.** SysEx payload is 7-bit; a single byte `>= 0x80` inside the voice
+data makes WebMIDI refuse the entire bank with
+`System exclusive message contains a status byte at index N`. A few cartridges
+in the wild are genuinely damaged that way — one voice per file, with bytes
+scrambled across several operators, which is why it does not show up as an
+obviously weird patch name. Clamping those bytes would produce a different,
+wrong-sounding voice, so such voices are **skipped at selection time** instead:
+the generator picks a clean copy of the same patch from another cartridge when
+one exists. Every bank here is verified to contain only 7-bit data.
 
 ## Rebuilding
 
