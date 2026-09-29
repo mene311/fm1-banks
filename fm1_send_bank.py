@@ -90,6 +90,8 @@ def main() -> int:
     ap.add_argument("--port", help="ALSA port name, e.g. 36:0 or 'FM-1 MIDI 1'")
     ap.add_argument("--channel", type=int, default=1, choices=range(1, 17))
     ap.add_argument("--dry-run", action="store_true", help="build the message, send nothing")
+    ap.add_argument("--wait", action="store_true",
+                    help="after sending, wait for Enter (so you can pick a bank and SAVE)")
     args = ap.parse_args()
 
     path = Path(args.bank)
@@ -133,10 +135,18 @@ def main() -> int:
         return 1
 
     out.send_message(msg)
-    print(f"sent    : {len(msg)} bytes")
+    print(f"sent    : {len(msg)} bytes to {(ports[idx])}")
     time.sleep(INTER_MESSAGE_MS / 1000.0)
     out.close_port()
-    print("done    : check the FM-1 for the A/B/C/D bank prompt, then hold SAVE.")
+
+    print("waiting : pick the bank on the FM-1 (A/B/C/D), hold SAVE")
+    if args.wait:
+        try:
+            input("          press Enter when saved > ")
+        except EOFError:
+            pass
+    else:
+        print("          run with --wait to pause here for the next one")
     return 0
 
 

@@ -20,10 +20,7 @@ for bank in "$@"; do
   n=$((n + 1))
   echo
   echo "── $n/$#  $(basename "$bank") ──"
-  python3 "$here/fm1_send_bank.py" "$bank"
-  if [ "$n" -lt "$#" ]; then
-    read -r -p "   pick the bank on the FM-1, hold SAVE, then press Enter for the next… " _
-  fi
+  python3 "$here/fm1_send_bank.py" "$bank" --wait
 done
 
 echo
