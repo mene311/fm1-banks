@@ -19,6 +19,8 @@
   button.hear:hover { border-color: var(--accent); color: var(--accent); }
   button.hear.playing { border-color: var(--accent); color: var(--accent);
     background: var(--row-highlight); }
+  #sendlog .ok { color: var(--accent); }
+  #sendlog .warn { color: var(--warn); }
 </style>
 </head>
 <body>
@@ -111,7 +113,12 @@
           <input type="text" id="bname" value="MY BANK" maxlength="10" style="margin-left:6px;width:140px;background:var(--chrome-bg);border:1px solid var(--chrome-border);color:var(--chrome-text-bright);padding:5px 7px;font:inherit;font-size:12px">
         </label>
         <button id="build" type="button" disabled>Download .syx</button>
+        <button id="send" type="button" class="secondary" disabled>Send to FM-1</button>
         <span class="dim" id="buildhint" style="font-size:11.5px">Add at least one patch.</span>
+      </div>
+      <div id="sendlog" style="font-size:11.5px;margin-top:8px"></div>
+      <div style="margin-top:0"></div>
+      <div style="display:none">
       </div>
     </div>
   </section>
@@ -295,6 +302,8 @@ const slotsEl  = document.getElementById('slots');
 const pq       = document.getElementById('pq');
 const slotcount= document.getElementById('slotcount');
 const buildBtn = document.getElementById('build');
+const sendBtn  = document.getElementById('send');
+const sendLog  = document.getElementById('sendlog');
 
 function b64ToBytes(b64){
   const bin = atob(b64);
@@ -343,6 +352,7 @@ function renderPicker(){
 function renderSlots(){
   slotcount.textContent = chosen.length + '/32';
   buildBtn.disabled = chosen.length === 0;
+  sendBtn.disabled = chosen.length === 0;
   document.getElementById('buildhint').textContent = chosen.length === 0
     ? 'Add at least one patch.'
     : (chosen.length === 32 ? 'Full bank.' : (32 - chosen.length) + ' empty slots will be written as init voices.');
@@ -411,6 +421,52 @@ pq.addEventListener('input', renderPicker);
 
 document.getElementById('clear').addEventListener('click', () => {
   chosen = []; renderPicker(); renderSlots();
+});
+
+/* ── send straight to the FM-1 over WebMIDI ────────────────────────────────
+   The device accepts a plain DX7 bulk dump on its MIDI input: it answers with
+   an on-screen prompt asking which bank (A/B/C/D) to store into, so this only
+   has to transmit the bytes. Same payload as the download button.
+
+   Chrome/Edge only -- Firefox and Safari WebMIDI are unreliable or absent. */
+function log(html, cls){
+  const el = document.getElementById('sendlog');
+  el.innerHTML = html ? `<span class="${cls||'dim'}">${html}</span>` : '';
+}
+
+let midiOut = null;
+
+async function getMidiOut(){
+  if(midiOut) return midiOut;
+  if(!navigator.requestMIDIAccess){
+    throw new Error('This browser has no WebMIDI. Use Chrome or Edge.');
+  }
+  const access = await navigator.requestMIDIAccess({sysex: true});
+  const outs = [...access.outputs.values()];
+  const fm1 = outs.find(o => /fm-?1/i.test(o.name)) || outs[0];
+  if(!fm1) throw new Error('No MIDI output found. Connect the FM-1 over USB-C.');
+  midiOut = fm1;
+  return fm1;
+}
+
+sendBtn.addEventListener('click', async () => {
+  sendBtn.disabled = true;
+  log('connecting…');
+  try {
+    const out = await getMidiOut();
+    const bytes = buildBank();
+    // rtmidi-style send: the payload the device wants is the frame WITHOUT the
+    // leading F0 and trailing F7 (the MIDI stack supplies those).
+    const payload = Array.from(bytes.slice(1, -1));
+    log(`sending to <b>${out.name}</b> …`);
+    out.send(payload);
+    log(`sent 4104 bytes to <b>${out.name}</b>. `
+      + `Now pick a bank (A/B/C/D) on the FM-1, then hold SAVE.`, 'ok');
+  } catch(err){
+    log(err.message, 'warn');
+  } finally {
+    sendBtn.disabled = chosen.length === 0;
+  }
 });
 
 buildBtn.addEventListener('click', () => {
