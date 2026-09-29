@@ -79,13 +79,18 @@ def main() -> None:
             print(f"[!] missing {src.name}, skipping")
             continue
         shutil.copy2(src, DOCS_BANKS / src.name)
-        entries.append({
+        entry = {
             "key": key,
             "title": meta["title"],
             "desc": meta["desc"],
             "file": src.name,
             "slots": voice_names(src),
-        })
+        }
+        # attach a demo preview if one has been rendered
+        audio = DOCS / "audio" / f"FM-1_{key}.mp3"
+        if audio.exists():
+            entry["audio"] = audio.name
+        entries.append(entry)
 
     (DOCS / "banks.json").write_text(json.dumps(entries, indent=2) + "\n")
     print(f"[+] docs/banks.json: {len(entries)} banks, "

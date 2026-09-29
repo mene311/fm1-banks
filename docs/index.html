@@ -51,7 +51,7 @@
           <thead>
             <tr>
               <th style="width:170px">Bank</th>
-              <th style="width:330px">Contents</th>
+              <th style="width:96px">Preview</th>
               <th>Patches</th>
               <th style="width:80px;text-align:right">Get</th>
             </tr>
@@ -190,14 +190,27 @@ function render(list){
       return `<span class="slot${hit ? ' hit' : ''}" title="${esc(n)}">${esc(n)}</span>`;
     }).join('');
     const tr = document.createElement('tr');
+    // Only one preview plays at a time: starting one pauses whatever was playing.
+    const player = b.audio
+      ? `<audio controls preload="none" src="audio/${esc(b.audio)}" style="width:86px;height:28px"></audio>`
+      : '<span class="dim" style="font-size:11px">&mdash;</span>';
     tr.innerHTML = `
-      <td><strong style="color:var(--chrome-text-bright)">${esc(b.title)}</strong></td>
-      <td class="dim">${esc(b.desc)}</td>
+      <td><strong style="color:var(--chrome-text-bright)">${esc(b.title)}</strong>
+          <div class="dim" style="font-size:11px;margin-top:2px">${esc(b.desc)}</div></td>
+      <td>${player}</td>
       <td><div class="slots">${slots}</div></td>
       <td class="num"><a class="dl" href="banks/${esc(b.file)}" download>syx</a></td>`;
     tbody.appendChild(tr);
   }
 }
+
+// One preview at a time: starting a player pauses every other one.
+document.addEventListener('play', e => {
+  if(e.target.tagName !== 'AUDIO') return;
+  document.querySelectorAll('audio').forEach(a => {
+    if(a !== e.target && !a.paused) a.pause();
+  });
+}, true);
 
 q.addEventListener('input', () => {
   const s = q.value.trim().toLowerCase();

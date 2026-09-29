@@ -37,7 +37,8 @@
       "Seq Bass.A",
       "JunoStrng2",
       "JunoBrass2"
-    ]
+    ],
+    "audio": "FM-1_synthwave_bass.mp3"
   },
   {
     "key": "synthwave_pad",
@@ -77,7 +78,8 @@
       "voicevox",
       "voices#3",
       "voicepiano"
-    ]
+    ],
+    "audio": "FM-1_synthwave_pad.mp3"
   },
   {
     "key": "acid_techno",
@@ -117,7 +119,8 @@
       "GRAVE SYN.",
       "RAVE PAD",
       "SynIceSqrB"
-    ]
+    ],
+    "audio": "FM-1_acid_techno.mp3"
   },
   {
     "key": "drums_perc",
@@ -157,7 +160,8 @@
       "WAH-CLAVE",
       "tridentStg",
       "tamborine1"
-    ]
+    ],
+    "audio": "FM-1_drums_perc.mp3"
   },
   {
     "key": "bells_marimba",
@@ -197,7 +201,8 @@
       "ToySitrSyn",
       "ToyPiano3",
       "ToyOrkstra"
-    ]
+    ],
+    "audio": "FM-1_bells_marimba.mp3"
   },
   {
     "key": "piano_ep",
@@ -237,7 +242,8 @@
       "harpsilop",
       "\\Harpsic 2",
       "VS HARPSI"
-    ]
+    ],
+    "audio": "FM-1_piano_ep.mp3"
   },
   {
     "key": "lead_solo",
@@ -277,7 +283,8 @@
       "ViolnSolo9",
       "ViolinSolo",
       "Vib Lead.2"
-    ]
+    ],
+    "audio": "FM-1_lead_solo.mp3"
   },
   {
     "key": "organ",
@@ -317,7 +324,8 @@
       "PercSynOrg",
       "PercOrgan",
       "PERCU ORG2"
-    ]
+    ],
+    "audio": "FM-1_organ.mp3"
   },
   {
     "key": "ambient_texture",
@@ -357,7 +365,8 @@
       "Voices3.BC",
       "Voices2.BC",
       "AMBIENT 9"
-    ]
+    ],
+    "audio": "FM-1_ambient_texture.mp3"
   },
   {
     "key": "bass_funk_slap",
@@ -397,7 +406,8 @@
       "FunkSynth",
       "FunkSyn",
       "SynthSlap"
-    ]
+    ],
+    "audio": "FM-1_bass_funk_slap.mp3"
   },
   {
     "key": "brass_section",
@@ -437,7 +447,8 @@
       "XYTOPHITHO",
       "WhiteWASH1",
       "WhiteNoise"
-    ]
+    ],
+    "audio": "FM-1_brass_section.mp3"
   },
   {
     "key": "strings_orchestral",
@@ -477,7 +488,8 @@
       "_ENSEMBLE",
       "Symphony.7",
       "SYMPHONIUM"
-    ]
+    ],
+    "audio": "FM-1_strings_orchestral.mp3"
   },
   {
     "key": "vocal_choir",
@@ -517,7 +529,8 @@
       "S.CHOIR 3",
       "RADIOCHOIR",
       "PipeChoir"
-    ]
+    ],
+    "audio": "FM-1_vocal_choir.mp3"
   },
   {
     "key": "misc_fx",
@@ -557,7 +570,8 @@
       "superspace",
       "spacestr.",
       "spaceorgan"
-    ]
+    ],
+    "audio": "FM-1_misc_fx.mp3"
   },
   {
     "key": "guitar",
@@ -597,7 +611,8 @@
       "GUN-FUZZ",
       "FuzzyLead",
       "FuzzyKoto"
-    ]
+    ],
+    "audio": "FM-1_guitar.mp3"
   },
   {
     "key": "plucked_world",
@@ -637,7 +652,8 @@
       "{{Harp.Z}}",
       "{{Harp.Y}}",
       "{{Harp.X}}"
-    ]
+    ],
+    "audio": "FM-1_plucked_world.mp3"
   },
   {
     "key": "woodwinds_sax",
@@ -677,7 +693,8 @@
       "Windflute",
       "WatrFlute3",
       "WINDFLUTEY"
-    ]
+    ],
+    "audio": "FM-1_woodwinds_sax.mp3"
   },
   {
     "key": "percussion_tribal",
@@ -717,7 +734,8 @@
       "Log Drum.2",
       "LOGDRUM T1",
       "LOG DRUMS"
-    ]
+    ],
+    "audio": "FM-1_percussion_tribal.mp3"
   },
   {
     "key": "chiptune",
@@ -757,7 +775,8 @@
       "Rds.Tones",
       "PianoTines",
       "Pch Bones2"
-    ]
+    ],
+    "audio": "FM-1_chiptune.mp3"
   },
   {
     "key": "scifi_horror",
@@ -797,7 +816,8 @@
       "SirenComic",
       "sci-fi",
       "downspace"
-    ]
+    ],
+    "audio": "FM-1_scifi_horror.mp3"
   },
   {
     "key": "industrial",
@@ -837,7 +857,8 @@
       "WOBBLEBASS",
       "MACHINES",
       "Industrial"
-    ]
+    ],
+    "audio": "FM-1_industrial.mp3"
   },
   {
     "key": "orchestral_hits",
@@ -877,7 +898,8 @@
       "Shorthorns",
       "SYNTHORNS",
       "SOLOHORNS2"
-    ]
+    ],
+    "audio": "FM-1_orchestral_hits.mp3"
   },
   {
     "key": "clav_funk",
@@ -917,7 +939,8 @@
       "UK B-3",
       "funkbrass$",
       "^Clavicle^"
-    ]
+    ],
+    "audio": "FM-1_clav_funk.mp3"
   },
   {
     "key": "vibes_bells",
@@ -957,7 +980,8 @@
       "sick gong",
       "gong sorta",
       "^^Gong^^"
-    ]
+    ],
+    "audio": "FM-1_vibes_bells.mp3"
   },
   {
     "key": "electronic_bass",
@@ -997,7 +1021,8 @@
       "TB303 BASS",
       "JungleKiMS",
       "Jungle Bop"
-    ]
+    ],
+    "audio": "FM-1_electronic_bass.mp3"
   },
   {
     "key": "church_organ",
@@ -1037,6 +1062,7 @@
       "ChurchPipe",
       "ChurchBell",
       "Church"
-    ]
+    ],
+    "audio": "FM-1_church_organ.mp3"
   }
 ]
