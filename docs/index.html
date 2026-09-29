@@ -3,121 +3,163 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FM-1 Bank Collection</title>
-<meta name="description" content="Thematic 32-voice DX7 banks for the M-VAVE FM-1 — synthwave, acid, drums, ambient, and more.">
-<style>
-  :root{
-    --bg:#0e0d12; --panel:#17161d; --panel2:#1e1c26; --line:#2a2836;
-    --tx:#e8e6f0; --tx2:#a49fb8; --accent:#b48cff; --accent2:#65e0c8;
-    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--tx);
-    font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    -webkit-font-smoothing:antialiased}
-  a{color:var(--accent2)}
-  header{padding:3rem 1.5rem 2rem;max-width:1100px;margin:0 auto;text-align:center}
-  h1{margin:0 0 .4rem;font-size:clamp(1.9rem,4.5vw,3rem);letter-spacing:-.02em;
-     background:linear-gradient(100deg,var(--accent),var(--accent2));
-     -webkit-background-clip:text;background-clip:text;color:transparent}
-  .sub{color:var(--tx2);max-width:62ch;margin:0 auto 1.4rem}
-  .badges{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;font-size:.8rem}
-  .badge{background:var(--panel);border:1px solid var(--line);border-radius:999px;
-         padding:.3rem .8rem;color:var(--tx2)}
-  .searchbar{max-width:420px;margin:1.6rem auto 0;position:relative}
-  input[type=search]{width:100%;padding:.75rem 1rem;border-radius:10px;
-    background:var(--panel);border:1px solid var(--line);color:var(--tx);font-size:1rem}
-  input[type=search]:focus{outline:none;border-color:var(--accent)}
-  main{max-width:1100px;margin:0 auto;padding:1rem 1.5rem 5rem}
-  .grid{display:grid;gap:1.1rem;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-        overflow:hidden;display:flex;flex-direction:column;transition:border-color .15s,transform .15s}
-  .card:hover{border-color:var(--accent);transform:translateY(-2px)}
-  .card-head{padding:1rem 1.1rem .8rem;border-bottom:1px solid var(--line);
-             background:var(--panel2)}
-  .card-head h2{margin:0 0 .25rem;font-size:1.08rem}
-  .card-head p{margin:0;color:var(--tx2);font-size:.85rem}
-  .patches{padding:.7rem 1.1rem 1rem;display:flex;flex-wrap:wrap;gap:.3rem;flex:1}
-  .p{font:12px/1 var(--mono);background:var(--bg);border:1px solid var(--line);
-     border-radius:5px;padding:.3rem .45rem;color:var(--tx2);white-space:nowrap;
-     overflow:hidden;text-overflow:ellipsis;max-width:100%}
-  .card-foot{padding:.8rem 1.1rem 1.1rem;display:flex;gap:.5rem;align-items:center}
-  .dl{flex:1;text-align:center;text-decoration:none;padding:.6rem 1rem;border-radius:9px;
-      background:linear-gradient(100deg,var(--accent),var(--accent2));color:#12101a;
-      font-weight:650;font-size:.9rem}
-  .dl:hover{filter:brightness(1.1)}
-  .count{font:12px/1 var(--mono);color:var(--tx2)}
-  .empty{color:var(--tx2);text-align:center;padding:3rem 1rem}
-  footer{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem;color:var(--tx2);
-         font-size:.85rem;border-top:1px solid var(--line)}
-  footer code{font-family:var(--mono);background:var(--panel);padding:.15rem .4rem;
-              border-radius:4px;border:1px solid var(--line)}
-  details{margin-top:1rem}
-  summary{cursor:pointer;color:var(--accent2)}
-</style>
+<title>FM-1 banks — thematic DX7 banks for the M-VAVE FM-1</title>
+<meta name="description" content="Thematic 32-voice DX7 banks for the M-VAVE FM-1: synthwave, acid, drums, ambient, orchestral and more.">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <h1>FM-1 Bank Collection</h1>
-  <p class="sub">Thematic 32-voice DX7 banks for the M-VAVE FM-1. Load four into
-  slots A/B/C/D and every one of the 128 presets is something you actually want.</p>
-  <div class="badges">
-    <span class="badge" id="nBanks">— banks</span>
-    <span class="badge">32 voices each</span>
-    <span class="badge">DX7 SysEx</span>
-    <span class="badge">free</span>
-  </div>
-  <div class="searchbar">
-    <input type="search" id="q" placeholder="Filter banks or patch names…" autocomplete="off">
-  </div>
-</header>
+
+<div class="site-header"><div class="header-inner">
+<a class="logo" href="./"><span class="logo-text">fm1<strong>&#183;</strong>banks</span></a>
+<nav class="site-nav">
+<a href="#banks">Banks</a>
+<a href="#install">Install</a>
+<a href="#format">Format</a>
+<a href="https://github.com/mene311/fm1-banks">GitHub</a>
+</nav>
+</div></div>
+
+<div class="hero"><div class="hero-inner">
+<h1>Thematic banks for the <em>M-VAVE FM-1</em></h1>
+<p>The FM-1 holds 128 presets as four banks of 32. These are complete 32-voice DX7 banks, each built around one theme, drawn from public DX7 collections and filed so that a bank is worth using as a bank. Load four into slots A&#8211;D and all 128 slots are something you meant to have.</p>
+</div></div>
 
 <main>
-  <div class="grid" id="grid"></div>
-  <div class="empty" id="empty" hidden>No matches.</div>
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Find</h2>
+      <span class="hint" id="count">loading…</span>
+    </div>
+    <div class="panel-body">
+      <div class="opts">
+        <label style="flex:1">
+          <input type="search" id="q" placeholder="filter by theme or patch name…" autocomplete="off" spellcheck="false">
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="banks">
+    <div class="panel-head">
+      <h2>Banks</h2>
+      <span class="hint">Each row is one complete 32-voice DX7 bank. The names are the patches inside it, in slot order.</span>
+    </div>
+    <div class="panel-body">
+      <div class="table-wrap">
+        <table class="rows" id="table">
+          <thead>
+            <tr>
+              <th style="width:170px">Bank</th>
+              <th style="width:330px">Contents</th>
+              <th>Patches</th>
+              <th style="width:80px;text-align:right">Get</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="empty" hidden>No banks match that filter.</div>
+    </div>
+  </section>
+
+  <section class="panel" id="install">
+    <div class="panel-head">
+      <h2>Install</h2>
+      <span class="hint">Under a minute per bank, four banks fills the instrument.</span>
+    </div>
+    <div class="panel-body">
+      <ol class="steps">
+        <li>Connect the FM-1 over USB-C and open the <a href="https://fm1-editor.com/" target="_blank" rel="noopener">FM-1 editor</a> in <strong>Chrome or Edge</strong>. Firefox and Safari WebMIDI are unreliable or unsupported.</li>
+        <li>Enable MIDI and select the FM-1 as the output device.</li>
+        <li><strong>Import DX7 bank</strong>, choose one of the files below, and pick a destination bank: <strong>A, B, C or D</strong>.</li>
+        <li><strong>Hold SAVE</strong> on the FM-1 to write it to flash. Without this the bank is gone at power-off.</li>
+      </ol>
+      <p class="dim" style="margin-top:10px;font-size:11.5px">Four banks fill slots A&#8211;D (1&#8211;32, 33&#8211;64, 65&#8211;96, 97&#8211;128). Presets already on the device in a bank you overwrite are replaced.</p>
+    </div>
+  </section>
+
+  <section class="panel" id="format">
+    <div class="panel-head">
+      <h2>Format</h2>
+      <span class="hint">Two things that break hand-built banks, and why these work.</span>
+    </div>
+    <div class="panel-body">
+      <p style="font-size:12px;color:var(--chrome-text-dim);max-width:80ch">
+        These are standard Yamaha DX7 32-voice bulk dumps, 4104 bytes:
+        <code>F0 43 00 09 20 00 &lt;4096&gt; &lt;checksum&gt; F7</code>.
+        Two details matter.
+      </p>
+      <ol class="steps" style="margin-top:10px">
+        <li><strong>Checksum.</strong> M-VAVE's own dumps use <code>(-sum(4096 voice bytes)) &amp; 0x7F</code>, the six header bytes <em>excluded</em>. A textbook Yamaha checksum, which includes the header, is rejected by the editor as <span class="dim">"this file looks damaged"</span>.</li>
+        <li><strong>Names.</strong> Some original DX7 authors padded patch names with <code>0x7F</code>. Strict parsers reject those banks, so every name here is stripped to printable ASCII before the bank is written.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Elsewhere</h2>
+      <span class="hint">The rest of what I publish.</span>
+    </div>
+    <div class="panel-body">
+      <div class="cards">
+        <article class="card">
+          <h3>Renoise hub</h3>
+          <p>Everything I've built for Renoise: wavetable instruments, colour themes, LFO shapes and the tools that make them.</p>
+          <div class="links"><a href="https://mene311.github.io/renoise-hub/">open</a></div>
+          <div class="tags"><span class="tag">renoise</span><span class="tag">xrni</span><span class="tag">xrnc</span></div>
+        </article>
+        <article class="card">
+          <h3>Source</h3>
+          <p>The generator, the bank files, and the notes on the format. Banks are rebuilt from any local DX7 collection with one command.</p>
+          <div class="links"><a href="https://github.com/mene311/fm1-banks">open</a></div>
+          <div class="tags"><span class="tag">python</span><span class="tag">dx7</span><span class="tag">sysEx</span></div>
+        </article>
+      </div>
+    </div>
+  </section>
 </main>
 
 <footer>
-  <p><strong>Install:</strong> open <a href="https://fm1-editor.com/" target="_blank" rel="noopener">fm1-editor.com</a>
-  in Chrome or Edge, connect the FM-1 over USB-C, <em>Import DX7 bank</em>, pick a
-  destination bank (A–D), then <strong>hold SAVE</strong> on the FM-1.</p>
-  <p>Banks are standard Yamaha DX7 32-voice bulk dumps (4104&nbsp;bytes). M-VAVE's
-  checksum convention is <code>(-sum(4096 voice bytes)) &amp; 0x7F</code> — header
-  excluded.</p>
-  <p>Generated with <code>fm1_banks.py</code> from public DX7 SysEx collections.
-  Patch authorship belongs to the original DX7 programmers.
-  <a href="https://github.com/mene311/fm1-banks">Source on GitHub</a>.</p>
+  <span>Built from public DX7 SysEx collections. Patch authorship belongs to the original DX7 programmers.</span>
+  <span id="built"></span>
 </footer>
 
 <script>
-const grid = document.getElementById('grid');
+const tbody = document.getElementById('tbody');
 const empty = document.getElementById('empty');
 const q = document.getElementById('q');
+const count = document.getElementById('count');
 let banks = [];
 
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+
 function render(list){
-  grid.innerHTML = '';
-  if(!list.length){ empty.hidden = false; return; }
+  tbody.innerHTML = '';
+  if(!list.length){ empty.hidden = false; count.textContent = '0 banks'; return; }
   empty.hidden = true;
+  count.textContent = list.length + (list.length === 1 ? ' bank' : ' banks');
   for(const b of list){
-    const card = document.createElement('article');
-    card.className = 'card';
-    const patches = b.slots.map(n=>`<span class="p" title="${n}">${n}</span>`).join('');
-    card.innerHTML = `
-      <div class="card-head">
-        <h2>${b.title}</h2>
-        <p>${b.desc}</p>
-      </div>
-      <div class="patches">${patches}</div>
-      <div class="card-foot">
-        <span class="count">32 voices</span>
-        <a class="dl" download href="banks/${b.file}">Download .syx</a>
-      </div>`;
-    grid.appendChild(card);
+    const term = q.value.trim().toLowerCase();
+    const slots = b.slots.map(n => {
+      const hit = term && n.toLowerCase().includes(term);
+      return `<span class="slot${hit ? ' hit' : ''}" title="${esc(n)}">${esc(n)}</span>`;
+    }).join('');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong style="color:var(--chrome-text-bright)">${esc(b.title)}</strong></td>
+      <td class="dim">${esc(b.desc)}</td>
+      <td><div class="slots">${slots}</div></td>
+      <td class="num"><a class="dl" href="banks/${esc(b.file)}" download>syx</a></td>`;
+    tbody.appendChild(tr);
   }
 }
 
-q.addEventListener('input', ()=>{
+q.addEventListener('input', () => {
   const s = q.value.trim().toLowerCase();
   if(!s){ render(banks); return; }
   render(banks.filter(b =>
@@ -128,15 +170,14 @@ q.addEventListener('input', ()=>{
 });
 
 fetch('banks.json')
-  .then(r=>r.json())
-  .then(data=>{
+  .then(r => r.json())
+  .then(data => {
     banks = data;
-    document.getElementById('nBanks').textContent = banks.length + ' banks';
     render(banks);
+    document.getElementById('built').textContent =
+      data.length + ' banks · 32 voices each · ' + (data.length * 32) + ' patches';
   })
-  .catch(()=>{
-    grid.innerHTML = '<div class="empty">Could not load banks.json</div>';
-  });
+  .catch(() => { tbody.innerHTML = '<tr><td colspan="4" class="dim">Could not load banks.json</td></tr>'; });
 </script>
 </body>
 </html>
