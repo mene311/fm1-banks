@@ -5,7 +5,9 @@ name: build
 #   docs/banks/*.syx  -- mirror of banks/ (GitHub Pages does not follow symlinks)
 #   docs/patches.json -- every patch's 128 raw bytes, for the in-browser builder
 #
-# These are all DERIVED from banks/*.syx. If they drift, the gallery lies.
+# These are all DERIVED from banks/*.syx and banks/provenance.json. If they
+# drift, the gallery lies. Note this workflow does NOT touch docs/index.html:
+# that file is hand-written, so edit it directly.
 
 on:
   push:
@@ -44,8 +46,12 @@ jobs:
               chk_ok = d[-2] == ((-sum(d[6:6+4096])) & 0x7F)
               end_ok = d[-1] == 0xF7
               size_ok = len(d) == 4104
-              if not (header_ok and chk_ok and end_ok and size_ok):
-                  print(f"BAD {f}: header={header_ok} chk={chk_ok} end={end_ok} size={size_ok}")
+              # SysEx payload is 7-bit. A single byte >= 0x80 makes WebMIDI
+              # reject the whole bank, which is how a bad bank once shipped.
+              data_ok = not any(b >= 0x80 for b in d[1:-1])
+              if not (header_ok and chk_ok and end_ok and size_ok and data_ok):
+                  print(f"BAD {f}: header={header_ok} chk={chk_ok} end={end_ok} "
+                        f"size={size_ok} 7bit={data_ok}")
                   bad += 1
           n = len(glob.glob("banks/*.syx"))
           print(f"{n} banks checked, {bad} bad")

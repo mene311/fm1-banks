@@ -19,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 from pathlib import Path
@@ -555,12 +556,29 @@ def main() -> None:
     if args.only:
         themes = {k: v for k, v in THEMES.items() if k in args.only}
 
+    # Provenance cannot live in the bank: a DX7 voice is 128 fixed bytes with a
+    # 10-character name, so the source of each patch is written alongside as a
+    # sidecar. build_gallery.py joins it back in for the library page.
+    provenance: dict[str, list] = {}
+
     for key, spec in themes.items():
         voices = select(rows, spec["categories"], limit=32)
         bank = build_bank(voices, library)
         outfile = out / f"FM-1_{key}.syx"
         outfile.write_bytes(bank)
+        provenance[key] = [
+            {
+                "collection": path.split("/", 1)[0],
+                "file": path,
+                "index": idx,
+            }
+            for _, path, idx in voices
+        ]
         print(f"[+] {key}: {len(voices)} voices -> {outfile.name}")
+
+    prov_file = out / "provenance.json"
+    prov_file.write_text(json.dumps(provenance, indent=2) + "\n")
+    print(f"[+] {prov_file.name}: provenance for {len(provenance)} banks")
 
 
 if __name__ == "__main__":

@@ -373,6 +373,7 @@ async function sendSysex(bytes){
    & 0x7F -- the 6-byte header is EXCLUDED, which is M-VAVE's convention and
    the reason a textbook Yamaha checksum gets rejected as "damaged". */
 let allPatches = [];
+let patchCollections = [];
 let chosen = [];
 let bankAudio = {};   // bank key -> mp3 filename
 
@@ -395,6 +396,19 @@ function b64ToBytes(b64){
 
 function ci(s){ return String(s).toLowerCase(); }
 
+function sourceOf(p){
+  // "from <collection>, <file> #<slot>" -- the file path can be long, so the
+  // table shows the collection and the full path sits in the title attribute.
+  const col = (p.c === undefined) ? null : patchCollections[p.c];
+  if(!col) return {short:'', full:''};
+  const file = p.f ? p.f.split('/').pop() : '';
+  const slot = (p.s === undefined) ? '' : ' #' + (p.s + 1);
+  return {
+    short: col + (file ? ' \u00b7 ' + file : '') + slot,
+    full: col + (p.f ? ' \u2014 ' + p.f : '') + slot,
+  };
+}
+
 function renderPicker(){
   const term = ci(pq.value.trim());
   const picked = new Set(chosen.map(c => c.id));
@@ -416,17 +430,18 @@ function renderPicker(){
     return `<tr class="pick" data-id="${esc(id)}" style="cursor:pointer">
       <td style="width:34px"><span class="dim">+</span></td>
       <td>${esc(p.n)}</td>
-      <td class="dim" style="width:170px">${esc(p.k)}</td>
+      <td class="dim" style="width:190px">${esc(p.k)}</td>
       <td class="dim num" style="width:50px">${p.i + 1}</td>
-      <td class="prevcell2" style="width:150px">${hear}</td>
+      <td class="dim" style="width:270px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(sourceOf(p).full)}">${esc(sourceOf(p).short)}</td>
+      <td class="prevcell2" style="width:90px">${hear}</td>
     </tr>`;
-  }).join('') || `<tr><td colspan="4" class="dim">${
+  }).join('') || `<tr><td colspan="5" class="dim">${
     chosen.length >= 32 ? 'Your bank is full (32/32). Remove a slot to swap something in.' :
     term ? (matchesRemoved ? 'All matching patches are already in your bank.' : 'No patches match.') :
     'Nothing left to add.'
   }</td></tr>`;
   if(list.length > shown.length){
-    pickbody.innerHTML += `<tr><td colspan="4" class="dim">… ${list.length - shown.length} more, refine the search</td></tr>`;
+    pickbody.innerHTML += `<tr><td colspan="5" class="dim">… ${list.length - shown.length} more, refine the search</td></tr>`;
   }
 }
 
@@ -545,12 +560,13 @@ buildBtn.addEventListener('click', () => {
 fetch('patches.json')
   .then(r => r.json())
   .then(data => {
-    allPatches = data;
+    allPatches = data.patches;
+    patchCollections = data.collections || [];
     renderPicker();
     renderSlots();
   })
   .catch(() => {
-    pickbody.innerHTML = '<tr><td colspan="4" class="dim">Could not load patches.json</td></tr>';
+    pickbody.innerHTML = '<tr><td colspan="5" class="dim">Could not load patches.json</td></tr>';
   });
 </script>
 </body>
