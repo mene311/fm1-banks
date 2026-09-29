@@ -119,6 +119,67 @@ PHRASES: dict[str, dict] = {
 }
 
 
+# ── drum kits ────────────────────────────────────────────────────────────────
+# A drum bank cannot be demoed with one patch: it needs a PATTERN across several
+# patches. Each role maps to a slot index in the bank (found by name).
+DRUMKITS: dict[str, dict[str, int]] = {
+    # FM-1_drums_perc: 0 kick, 6 snare, 12 clap, 17 open hat, 20 toms, 27 conga
+    "drums_perc": {"kick": 0, "snare": 6, "clap": 12, "hat": 17, "tom": 20, "perc": 27},
+}
+
+# A drum step is (role, velocity). 16 sixteenths = one bar.
+DRUM_PATTERNS: dict[str, list] = {
+    "four_to_floor": [
+        ("kick",120), None,          ("hat",70),  None,
+        ("snare",105),None,          ("hat",62),  None,
+        ("kick",115), ("kick",80),   ("hat",70),  ("clap",90),
+        ("snare",100),None,          ("hat",74),  ("tom",85),
+    ],
+}
+
+
+def render_drums(patch_list, kit: dict[str, int], pattern, repeats: int) -> np.ndarray:
+    """Render a drum pattern by mixing several patches, one per role."""
+    from dexed import DexedSynth
+    synths: dict[str, tuple] = {}
+    for role, idx in kit.items():
+        if idx < len(patch_list):
+            sy = DexedSynth(sample_rate=SR)
+            sy.load_patch(patch_list[idx])
+            synths[role] = (sy, patch_list[idx].name.strip())
+
+    steps = pattern * repeats
+    total = int(SR * STEP * len(steps)) + int(SR * 0.4)
+    out = np.zeros(total, dtype=np.float32)
+
+    for i, ev in enumerate(steps):
+        if not ev:
+            continue
+        role, vel = ev
+        if role not in synths:
+            continue
+        sy, _ = synths[role]
+        # Drums are played at a fixed LOW note: these patches are voiced so that
+        # MIDI 36 gives the intended character (kick 264 Hz, snare 969 Hz,
+        # hat 10.8 kHz). Scattering notes per role pushed the kick brighter than
+        # the snare, which is backwards.
+        note = 36
+        a = sy.render(midi_note=note, velocity=vel,
+                      note_duration=STEP * 0.5, render_duration=STEP * 1.0)
+        st = int(i * SR * STEP)
+        en = min(st + len(a), total)
+        out[st:en] += a[:en - st] * 0.45
+
+    out -= out.mean()
+    rms = float(np.sqrt((out ** 2).mean()))
+    if rms > 0:
+        out *= 0.30 / rms
+    peak = float(np.abs(out).max())
+    if peak > 0.95:
+        out *= 0.95 / peak
+    return out
+
+
 def fundamental(patch, note: int = REF_NOTE) -> float:
     """Dominant frequency below 3 kHz for a patch at a reference note."""
     from dexed import DexedSynth
@@ -223,6 +284,26 @@ def main() -> None:
 
     bank = Path(args.bank)
     patches = Patch.load_bank(str(bank))
+
+    bank_key = bank.stem[len("FM-1_"):] if bank.stem.startswith("FM-1_") else bank.stem
+    if args.theme == "perc" and bank_key in DRUMKITS:
+        kit = DRUMKITS[bank_key]
+        names = ", ".join(f"{k}={patches[i].name.strip()}"
+                          for k, i in kit.items() if i < len(patches))
+        print(f"bank   : {bank.name}")
+        print(f"kit    : {names}")
+        audio = render_drums(patches, kit, DRUM_PATTERNS["four_to_floor"], repeats=2)
+        print(f"audio  : {len(audio)/SR:.2f}s, peak {np.abs(audio).max():.3f}, "
+              f"rms {np.sqrt((audio**2).mean()):.3f}")
+        wav = Path(args.wav_dir) / (bank.stem + ".wav")
+        write_wav(wav, audio)
+        out = Path(args.out)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["ffmpeg","-y","-loglevel","error","-i",str(wav),
+                        "-codec:a","libmp3lame","-b:a","96k",str(out)], check=True)
+        print(f"wrote  : {out} ({out.stat().st_size} bytes)")
+        return
+
     idx, patch, off = pick_patch(patches)
     f0 = fundamental(patch)
     print(f"bank   : {bank.name}")
