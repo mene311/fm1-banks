@@ -1,0 +1,65 @@
+name: build
+
+# Keeps the derived files in docs/ in sync with the source of truth in banks/.
+#   docs/banks.json   -- bank list + slot names for the gallery table
+#   docs/banks/*.syx  -- mirror of banks/ (GitHub Pages does not follow symlinks)
+#   docs/patches.json -- every patch's 128 raw bytes, for the in-browser builder
+#
+# These are all DERIVED from banks/*.syx. If they drift, the gallery lies.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'banks/**'
+      - 'fm1_banks.py'
+      - 'build_gallery.py'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Regenerate derived files
+        run: python3 build_gallery.py
+
+      - name: Verify banks are well-formed
+        run: |
+          python3 - <<'PY'
+          import glob, sys
+          bad = 0
+          for f in sorted(glob.glob("banks/*.syx")):
+              d = open(f, "rb").read()
+              header_ok = d[:6] == bytes([0xF0, 0x43, 0x00, 0x09, 0x20, 0x00])
+              chk_ok = d[-2] == ((-sum(d[6:6+4096])) & 0x7F)
+              end_ok = d[-1] == 0xF7
+              size_ok = len(d) == 4104
+              if not (header_ok and chk_ok and end_ok and size_ok):
+                  print(f"BAD {f}: header={header_ok} chk={chk_ok} end={end_ok} size={size_ok}")
+                  bad += 1
+          n = len(glob.glob("banks/*.syx"))
+          print(f"{n} banks checked, {bad} bad")
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Commit if anything changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "derived files already in sync"
+          else
+            git add docs/
+            git commit -m "Regenerate derived gallery data from banks/"
+            git push
+          fi
