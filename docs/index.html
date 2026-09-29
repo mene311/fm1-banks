@@ -6,6 +6,15 @@
 <title>FM-1 banks — thematic DX7 banks for the M-VAVE FM-1</title>
 <meta name="description" content="Thematic 32-voice DX7 banks for the M-VAVE FM-1: synthwave, acid, drums, ambient, orchestral and more.">
 <link rel="stylesheet" href="style.css">
+<style>
+  /* preview players: the default control is a dark blob on a dark page, so give
+     it a visible frame and enough width to be usable */
+  audio.prev { width: 100%; min-width: 150px; height: 34px; display: block;
+               background: var(--chrome-bg); border: 1px solid var(--chrome-border); }
+  td.prevcell { width: 170px; }
+  /* picker rows get a small play button per patch */
+  audio.pickprev { width: 30px; height: 22px; vertical-align: middle; }
+</style>
 </head>
 <body>
 
@@ -51,7 +60,7 @@
           <thead>
             <tr>
               <th style="width:170px">Bank</th>
-              <th style="width:96px">Preview</th>
+              <th style="width:170px">Preview</th>
               <th>Patches</th>
               <th style="width:80px;text-align:right">Get</th>
             </tr>
@@ -192,7 +201,7 @@ function render(list){
     const tr = document.createElement('tr');
     // Only one preview plays at a time: starting one pauses whatever was playing.
     const player = b.audio
-      ? `<audio controls preload="none" src="audio/${esc(b.audio)}" style="width:86px;height:28px"></audio>`
+      ? `<audio controls preload="none" src="audio/${esc(b.audio)}" class="prev"></audio>`
       : '<span class="dim" style="font-size:11px">&mdash;</span>';
     tr.innerHTML = `
       <td><strong style="color:var(--chrome-text-bright)">${esc(b.title)}</strong>
@@ -226,7 +235,10 @@ fetch('banks.json')
   .then(r => r.json())
   .then(data => {
     banks = data;
+    bankAudio = {};
+    data.forEach(b => { if(b.audio) bankAudio[b.key] = b.audio; });
     render(banks);
+    if(allPatches.length) renderPicker();   // picker needs bankAudio, so redraw
     document.getElementById('built').textContent =
       data.length + ' banks · 32 voices each · ' + (data.length * 32) + ' patches';
   })
@@ -239,6 +251,9 @@ fetch('banks.json')
    the reason a textbook Yamaha checksum gets rejected as "damaged". */
 let allPatches = [];
 let chosen = [];
+let bankAudio = {};   // bank key -> mp3 filename
+
+function audioFor(key){ return bankAudio[key] || null; }
 
 const pickbody = document.getElementById('pickbody');
 const slotsEl  = document.getElementById('slots');
@@ -268,11 +283,17 @@ function renderPicker(){
   const shown = list.slice(0, 300);
   pickbody.innerHTML = shown.map(p => {
     const id = p.k + '#' + p.i;
+    // patches do not have individual audio, so preview the bank they come from
+    const demo = audioFor(p.k);
+    const hear = demo
+      ? `<audio controls preload="none" class="pickprev" data-bank="${esc(p.k)}" src="audio/${esc(demo)}"></audio>`
+      : '<span class="dim" style="font-size:10px">&mdash;</span>';
     return `<tr class="pick" data-id="${esc(id)}" style="cursor:pointer">
       <td style="width:34px"><span class="dim">+</span></td>
       <td>${esc(p.n)}</td>
-      <td class="dim" style="width:190px">${esc(p.k)}</td>
-      <td class="dim num" style="width:56px">${p.i + 1}</td>
+      <td class="dim" style="width:170px">${esc(p.k)}</td>
+      <td class="dim num" style="width:50px">${p.i + 1}</td>
+      <td class="prevcell2" style="width:150px">${hear}</td>
     </tr>`;
   }).join('') || `<tr><td colspan="4" class="dim">${
     chosen.length >= 32 ? 'Your bank is full (32/32). Remove a slot to swap something in.' :
@@ -325,6 +346,8 @@ function buildBank(){
 }
 
 pickbody.addEventListener('click', e => {
+  // clicking the preview control must not add the patch
+  if(e.target.tagName === 'AUDIO' || e.target.closest('audio')) return;
   const tr = e.target.closest('tr.pick');
   if(!tr) return;
   const id = tr.dataset.id;
