@@ -101,13 +101,19 @@ reduced to printable ASCII before the file is written.
 
 **7-bit data.** SysEx payload is 7-bit; a single byte `>= 0x80` inside the voice
 data makes WebMIDI refuse the entire bank with
-`System exclusive message contains a status byte at index N`. A few cartridges
-in the wild are genuinely damaged that way — one voice per file, with bytes
-scrambled across several operators, which is why it does not show up as an
-obviously weird patch name. Clamping those bytes would produce a different,
-wrong-sounding voice, so such voices are **skipped at selection time** instead:
-the generator picks a clean copy of the same patch from another cartridge when
-one exists. Every bank here is verified to contain only 7-bit data.
+`System exclusive message contains a status byte at index N`.
+
+A few cartridges in the wild carry voices like that. They are 8-bit ASCII that
+somehow ended up in a 7-bit container, and the giveaway is the patch name:
+`Gl\xe9\xe4\xe5\xf0i\xe1no` is **Glidepiano**, `pi\xe3k\xf9\xa0l\xefw` is **picky
+low**, `Sa\xf9 \xc1\xe7a\xe9n.` is **Say Again.**. The stray high bit is
+meaningless, so masking every byte to 7 bits restores the name and the
+parameters underneath it. The generator masks such voices and reports each one
+it repaired, rather than dropping them: of 30 affected names, 27 had a clean
+twin elsewhere, but 3 existed *only* in mangled form.
+
+Across the full source library (11,627 files, 396,011 voices) that is 158
+voices in 127 files. Every bank here is verified to contain only 7-bit data.
 
 ## Rebuilding
 
