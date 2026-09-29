@@ -455,11 +455,12 @@ sendBtn.addEventListener('click', async () => {
   try {
     const out = await getMidiOut();
     const bytes = buildBank();
-    // rtmidi-style send: the payload the device wants is the frame WITHOUT the
-    // leading F0 and trailing F7 (the MIDI stack supplies those).
-    const payload = Array.from(bytes.slice(1, -1));
+    // WebMIDI needs a COMPLETE SysEx message: F0 ... F7. Sending the payload
+    // without the delimiters makes Chrome read the first data byte (0x43) as a
+    // running-status byte and throw "Running status is not allowed at index 0".
+    const msg = Array.from(bytes);
     log(`sending to <b>${out.name}</b> …`);
-    out.send(payload);
+    out.send(msg);
     log(`sent 4104 bytes to <b>${out.name}</b>. `
       + `Now pick a bank (A/B/C/D) on the FM-1, then hold SAVE.`, 'ok');
   } catch(err){
