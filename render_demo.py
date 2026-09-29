@@ -181,7 +181,13 @@ def render_drums(patch_list, kit: dict[str, int], pattern, repeats: int) -> np.n
 
 
 def fundamental(patch, note: int = REF_NOTE) -> float:
-    """Dominant frequency below 3 kHz for a patch at a reference note."""
+    """True fundamental: the LOWEST significant partial, not the loudest bin.
+
+    Taking the loudest bin is wrong -- a drawbar organ's strongest energy can sit
+    on a harmonic (soft b3 peaks at 523.6 Hz while its fundamental is 131 Hz), and
+    that misreading transposes the patch the wrong way. The fundamental is the
+    lowest partial that carries real energy.
+    """
     from dexed import DexedSynth
     s = DexedSynth(sample_rate=SR)
     s.load_patch(patch)
@@ -189,10 +195,16 @@ def fundamental(patch, note: int = REF_NOTE) -> float:
                  render_duration=1.4)
     F = np.abs(np.fft.rfft(a * np.hanning(len(a))))
     f = np.fft.rfftfreq(len(a), 1 / SR)
-    m = f < 3000
-    if not m.any() or F[m].max() <= 0:
+    m = (f > 30) & (f < 4000)
+    Fm, fm = F[m], f[m]
+    if len(Fm) == 0 or Fm.max() <= 0:
         return 0.0
-    return float(f[m][np.argmax(F[m])])
+    thr = 0.15 * Fm.max()                      # "significant" = >=15% of loudest
+    peaks = [fm[i] for i in range(1, len(Fm) - 1)
+             if Fm[i] > thr and Fm[i] >= Fm[i - 1] and Fm[i] > Fm[i + 1]]
+    if not peaks:
+        return float(fm[int(np.argmax(Fm))])
+    return float(min(peaks))
 
 
 def octave_offset(patch) -> float:

@@ -12,8 +12,13 @@
   audio.prev { width: 100%; min-width: 150px; height: 34px; display: block;
                background: var(--chrome-bg); border: 1px solid var(--chrome-border); }
   td.prevcell { width: 170px; }
-  /* picker rows get a small play button per patch */
-  audio.pickprev { width: 30px; height: 22px; vertical-align: middle; }
+  /* per-patch preview button in the picker */
+  button.hear { background: transparent; border: 1px solid var(--chrome-border-light);
+    color: var(--chrome-text-dim); font-size: 11px; line-height: 1; padding: 4px 8px;
+    cursor: pointer; }
+  button.hear:hover { border-color: var(--accent); color: var(--accent); }
+  button.hear.playing { border-color: var(--accent); color: var(--accent);
+    background: var(--row-highlight); }
 </style>
 </head>
 <body>
@@ -214,11 +219,40 @@ function render(list){
 }
 
 // One preview at a time: starting a player pauses every other one.
+// One shared player for patch previews: swapping src stops whatever was playing,
+// and only one note-sequence is ever in flight.
+const patchPlayer = new Audio();
+patchPlayer.preload = 'none';
+patchPlayer.volume = 0.9;
+
+function stopPatchPreview(){
+  patchPlayer.pause();
+  patchPlayer.currentTime = 0;
+  document.querySelectorAll('#pickbody button.hear.playing')
+    .forEach(b => { b.classList.remove('playing'); b.innerHTML = '&#9654;'; });
+}
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('#pickbody button.hear');
+  if(!btn) return;
+  e.stopPropagation();
+  const wasPlaying = btn.classList.contains('playing');
+  stopPatchPreview();
+  if(wasPlaying) return;                  // clicking again stops
+  patchPlayer.src = btn.dataset.src;
+  patchPlayer.play().catch(()=>{});
+  btn.classList.add('playing');
+  btn.innerHTML = '&#9632;';
+}, true);
+
+patchPlayer.addEventListener('ended', stopPatchPreview);
+
 document.addEventListener('play', e => {
   if(e.target.tagName !== 'AUDIO') return;
   document.querySelectorAll('audio').forEach(a => {
     if(a !== e.target && !a.paused) a.pause();
   });
+  stopPatchPreview();
 }, true);
 
 q.addEventListener('input', () => {
@@ -283,11 +317,11 @@ function renderPicker(){
   const shown = list.slice(0, 300);
   pickbody.innerHTML = shown.map(p => {
     const id = p.k + '#' + p.i;
-    // patches do not have individual audio, so preview the bank they come from
-    const demo = audioFor(p.k);
-    const hear = demo
-      ? `<audio controls preload="none" class="pickprev" data-bank="${esc(p.k)}" src="audio/${esc(demo)}"></audio>`
-      : '<span class="dim" style="font-size:10px">&mdash;</span>';
+    // each patch has its own short arpeggio preview; loaded lazily so the page
+    // does not pull 832 files at once
+    const src = `audio/patches/${esc(p.k)}__${String(p.i).padStart(2,'0')}.mp3`;
+    const hear = `<button type="button" class="hear" data-src="${src}"
+        title="Preview this patch" aria-label="Preview ${esc(p.n)}">&#9654;</button>`;
     return `<tr class="pick" data-id="${esc(id)}" style="cursor:pointer">
       <td style="width:34px"><span class="dim">+</span></td>
       <td>${esc(p.n)}</td>
