@@ -123,12 +123,13 @@
     </div>
     <div class="panel-body">
       <ol class="steps">
-        <li>Plug the FM-1 in over USB-C and open the <a href="https://fm1-editor.com/" target="_blank" rel="noopener">FM-1 editor</a> in <strong>Chrome or Edge</strong>. Firefox WebMIDI is unreliable on Linux and Safari has none.</li>
+        <li>Plug the FM-1 in over USB-C and open <a href="https://fm1-editor.com/" target="_blank" rel="noopener">fm1-editor.com</a> in <strong>Chrome or Edge</strong>. Firefox WebMIDI is unreliable on Linux and Safari has none.</li>
         <li>Turn MIDI on and point it at the FM-1.</li>
         <li><strong>Import DX7 bank</strong>, pick a file, then choose which of <strong>A, B, C or D</strong> to write it to.</li>
         <li><strong>Hold SAVE</strong> on the FM-1. Without this the bank is lost when it powers off.</li>
       </ol>
       <p class="dim" style="margin-top:10px;font-size:11.5px">Four banks fill slots A&#8211;D (1&#8211;32, 33&#8211;64, 65&#8211;96, 97&#8211;128). Presets already on the device in a bank you overwrite are replaced.</p>
+      <p class="dim" style="margin-top:10px;font-size:11.5px">The editor is <a href="https://github.com/benny-sparra/fm1-dx7-patch-importer" target="_blank" rel="noopener">open source</a> and does more than import. If Chrome will not hand over the MIDI port, the repo also ships <code>fm1_send_bank.py</code>, which writes a bank over ALSA from a terminal with no browser involved.</p>
     </div>
   </section>
 
@@ -165,7 +166,7 @@
         </article>
         <article class="card">
           <h3>Source</h3>
-          <p>The generator and the bank files. Rebuild everything from any local DX7 collection with one command.</p>
+          <p>The generator, the bank files, and the sender. Rebuild everything from any local DX7 collection with one command.</p>
           <div class="links"><a href="https://github.com/mene311/fm1-banks">open</a></div>
           <div class="tags"><span class="tag">python</span><span class="tag">dx7</span><span class="tag">sysEx</span></div>
         </article>

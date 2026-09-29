@@ -41,14 +41,36 @@ Gallery with audio: <https://mene311.github.io/fm1-banks/>
 
 ## Loading them
 
-1. Plug the FM-1 in over USB-C and open [fm1-editor.com](https://fm1-editor.com/)
-   in Chrome or Edge. Firefox WebMIDI is unreliable on Linux, Safari has none.
-2. Turn MIDI on and point it at the FM-1.
-3. Import a bank file, then choose which of A, B, C or D to write it to.
-4. Hold SAVE on the FM-1. Without this the bank is lost when it powers off.
-
 Four banks fill the instrument: slots 1-32, 33-64, 65-96, 97-128. A bank you
 write to replaces whatever was in that slot.
+
+### In the browser
+
+[fm1-editor.com](https://fm1-editor.com/) by Benny Sparra
+([source](https://github.com/benny-sparra/fm1-dx7-patch-importer)). Open it in
+Chrome or Edge, turn MIDI on, point it at the FM-1, import a bank file, choose
+A/B/C/D, then hold SAVE on the FM-1. It edits and organises patches as well as
+importing, and it is worth keeping around.
+
+Firefox WebMIDI is unreliable on Linux and Safari has none.
+
+### From a terminal
+
+`fm1_send_bank.py` writes a bank straight to the FM-1 over ALSA, with no browser
+and no permission prompts. Useful in a script, or on a machine where Chrome will
+not hand over the MIDI port.
+
+```bash
+python3 fm1_send_bank.py banks/FM-1_organ.syx            # finds the FM-1 itself
+python3 fm1_send_bank.py banks/FM-1_organ.syx --dry-run  # build the message only
+./fm1_send_set.sh banks/*.syx                             # several in a row
+```
+
+The FM-1 shows its bank-select screen when it receives a valid bank, and does not
+reply, so a successful send is silent. Pick the bank, hold SAVE.
+
+Either way, SAVE is what makes it stick. Skip it and the bank is gone at
+power-off.
 
 ## Format notes
 
