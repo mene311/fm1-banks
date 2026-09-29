@@ -27,38 +27,82 @@ REF_NOTE = 60                     # C4
 REF_HZ = 261.63
 
 
-# ── phrases, per theme (root-relative semitone offsets from the phrase root) ──
-# (offset, velocity)  Each is 16 steps; doubled to 32 for the loop.
+# ── phrases, per theme ───────────────────────────────────────────────────────
+# Each step is a LIST of (semitone_offset, velocity) notes. Polyphony comes from
+# putting several notes in one step (chords); a rest is an empty list.
+# Offsets are relative to the phrase root. 16 steps, doubled to 32 for the loop.
+#
+# Chord vocabulary (semitones from root):
+#   m   = [0,3,7]      M   = [0,4,7]      m7  = [0,3,7,10]
+#   M7  = [0,4,7,11]   sus4= [0,5,7]      add9= [0,4,7,14]
 PHRASES: dict[str, dict] = {
+    # ── monophonic: bass lines and acid ──
     "bass": {
         "root": 45,  # A2
-        "steps": [(0,110),(0,70),(12,110),(0,85),(3,100),(0,60),(0,110),(15,90),
-                  (0,100),(0,75),(10,110),(0,80),(7,95),(0,65),(0,105),(5,88)],
-    },
-    "pad": {
-        "root": 57,  # A3, chord tones, slower feel
-        "steps": [(0,95),(0,0),(7,90),(0,0),(4,85),(0,0),(0,80),(12,75),
-                  (3,90),(0,0),(10,85),(0,0),(7,80),(0,0),(0,75),(5,70)],
+        "steps": [[(0,110)],[(0,70)],[(12,110)],[(0,85)],[(3,100)],[(0,60)],
+                  [(0,110)],[(15,90)],[(0,100)],[(0,75)],[(10,110)],[(0,80)],
+                  [(7,95)],[(0,65)],[(0,105)],[(5,88)]],
     },
     "acid": {
         "root": 45,
-        "steps": [(0,110),(0,70),(12,110),(0,85),(3,100),(0,60),(0,110),(15,90),
-                  (0,100),(0,75),(10,110),(0,80),(7,95),(0,65),(0,105),(5,88)],
+        "steps": [[(0,110)],[(0,70)],[(12,110)],[(0,85)],[(3,100)],[(0,60)],
+                  [(0,110)],[(15,90)],[(0,100)],[(0,75)],[(10,110)],[(0,80)],
+                  [(7,95)],[(0,65)],[(0,105)],[(5,88)]],
     },
     "lead": {
         "root": 57,
-        "steps": [(0,110),(2,95),(4,100),(7,105),(9,95),(12,110),(7,90),(4,85),
-                  (0,105),(2,90),(5,100),(7,95),(12,110),(10,90),(7,85),(4,80)],
+        "steps": [[(0,110)],[(2,95)],[(4,100)],[(7,105)],[(9,95)],[(12,110)],
+                  [(7,90)],[(4,85)],[(0,105)],[(2,90)],[(5,100)],[(7,95)],
+                  [(12,110)],[(10,90)],[(7,85)],[(4,80)]],
     },
+    # ── polyphonic: pads hold chords, slowly ──
+    # Am - F - C - G  (i - VI - III - VII), 4 steps per chord.
+    "pad": {
+        "root": 57,  # A3
+        "steps": [[(0,88),(3,84),(7,82),(12,70)],          # Am
+                  [(0,86),(3,83),(7,81),(12,69)],
+                  [(0,86),(3,83),(7,81),(12,69)],
+                  [(0,84),(3,82),(7,80),(12,68)],
+                  [(-4,88),(-1,84),(2,82),(7,70)],         # F
+                  [(-4,86),(-1,83),(2,81),(7,69)],
+                  [(-4,86),(-1,83),(2,81),(7,69)],
+                  [(-4,84),(-1,82),(2,80),(7,68)],
+                  [(3,88),(7,84),(10,82),(15,70)],         # C
+                  [(3,86),(7,83),(10,81),(15,69)],
+                  [(3,86),(7,83),(10,81),(15,69)],
+                  [(3,84),(7,82),(10,80),(15,68)],
+                  [(-2,88),(2,84),(5,82),(10,70)],         # G
+                  [(-2,86),(2,83),(5,81),(10,69)],
+                  [(-2,86),(2,83),(5,81),(10,69)],
+                  [(-2,84),(2,82),(5,80),(10,68)]],
+    },
+    # ── polyphonic: keys comp chords in a rhythm ──
+    # Cmaj7 - Am7 - Dm7 - G7
     "keys": {
         "root": 48,  # C3
-        "steps": [(0,100),(4,90),(7,95),(12,100),(7,88),(4,92),(0,100),(0,80),
-                  (5,95),(9,90),(12,95),(16,100),(12,88),(9,92),(5,95),(0,85)],
+        "steps": [[(0,100),(4,92),(7,90),(11,80)],         # Cmaj7
+                  [],
+                  [(12,88),(16,82),(19,80),(23,70)],
+                  [],
+                  [(0,96),(4,88),(7,86),(11,76)],          # Cmaj7 up
+                  [],
+                  [(12,84),(16,78),(19,76),(23,66)],
+                  [],
+                  [(9,100),(12,92),(16,90),(21,80)],       # Am7  (A=C+9)
+                  [],
+                  [(21,88),(24,82),(28,80),(33,70)],
+                  [],
+                  [(2,96),(5,88),(9,86),(12,76)],          # Dm7
+                  [(0,84),(4,78),(7,76),(11,66)],          # G7
+                  [],
+                  [(0,100),(4,92),(7,90),(11,80)]],        # Cmaj7
     },
+    # ── percussive: still chords, short and stabby ──
     "perc": {
         "root": 48,
-        "steps": [(0,120),(0,0),(12,70),(0,0),(3,100),(0,0),(7,85),(0,0),
-                  (0,115),(0,0),(15,75),(0,0),(10,95),(0,0),(5,80),(0,0)],
+        "steps": [[(0,115),(7,100)],[],[(12,80)],[],[(3,105),(7,95)],[],
+                  [(7,88)],[],[(0,110),(5,98)],[],[(15,82)],[],[(10,98),(14,90)],
+                  [],[(5,85)],[(0,100)]],
     },
 }
 
@@ -110,14 +154,18 @@ def render_phrase(patch, offset_oct: float, phrase: dict) -> np.ndarray:
 
     total = int(SR * STEP * len(steps)) + SR
     out = np.zeros(total, dtype=np.float32)
-    for i, (semi, vel) in enumerate(steps):
-        if vel == 0:
+    # per-note gain: chords stack, so keep headroom proportional to chord size
+    poly = max((len(step) for step in steps), default=1)
+    vgain = 1.0 / max(1.0, poly ** 0.65)
+    for i, step in enumerate(steps):
+        if not step:
             continue
-        a = s.render(midi_note=root + semi, velocity=vel,
-                     note_duration=STEP * 0.95, render_duration=STEP * 1.0)
         st = int(i * SR * STEP)
-        en = min(st + len(a), total)
-        out[st:en] += a[:en - st]
+        for semi, vel in step:
+            a = s.render(midi_note=root + semi, velocity=vel,
+                         note_duration=STEP * 0.95, render_duration=STEP * 1.0)
+            en = min(st + len(a), total)
+            out[st:en] += a[:en - st] * vgain
 
     out -= out.mean()                       # DC block
     rms = float(np.sqrt((out ** 2).mean()))
