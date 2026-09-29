@@ -20,7 +20,7 @@ for bank in "$@"; do
   n=$((n + 1))
   echo
   echo "── $n/$#  $(basename "$bank") ──"
-  python3 "$here/fm1_send_bank.py" "$bank" --wait 10
+  python3 "$here/fm1_send_bank.py" "$bank" --wait ${FM1_WAIT:-10}
 done
 
 echo
