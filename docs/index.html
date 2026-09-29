@@ -19,6 +19,14 @@
   button.hear:hover { border-color: var(--accent); color: var(--accent); }
   button.hear.playing { border-color: var(--accent); color: var(--accent);
     background: var(--row-highlight); }
+  button.expand { background: transparent; border: 1px solid var(--chrome-border);
+    color: var(--chrome-text-dim); font-size: 11px; padding: 3px 8px; cursor: pointer;
+    white-space: nowrap; }
+  button.expand:hover { border-color: var(--accent); color: var(--accent); }
+  button.expand[aria-expanded="true"] { border-color: var(--accent); color: var(--text-bright, var(--chrome-text-bright)); }
+  button.expand .caret { display: inline-block; width: 9px; color: var(--accent); }
+  tr.detail > td { background: var(--chrome-bg); padding: 8px 8px 10px 22px; }
+  .slot b { font-weight: 400; opacity: .55; margin-right: 2px; }
   button.sendbank { background: transparent; border: 1px solid var(--chrome-border-light);
     color: var(--chrome-text-dim); font-size: 10px; padding: 2px 7px; cursor: pointer;
     text-transform: uppercase; letter-spacing: .06em; margin-left: 6px; }
@@ -215,9 +223,12 @@ function render(list){
   count.textContent = list.length + (list.length === 1 ? ' bank' : ' banks');
   for(const b of list){
     const term = q.value.trim().toLowerCase();
-    const slots = b.slots.map(n => {
+    // Patches are hidden by default: 32 chips x 26 banks is a wall of text.
+    // The row shows what the bank is; click to see the actual slot list.
+    const slots = b.slots.map((n, i) => {
       const hit = term && n.toLowerCase().includes(term);
-      return `<span class="slot${hit ? ' hit' : ''}" title="${esc(n)}">${esc(n)}</span>`;
+      return `<span class="slot${hit ? ' hit' : ''}" title="${esc(n)}">`
+           + `<b class="dim">${i + 1}</b> ${esc(n)}</span>`;
     }).join('');
     const tr = document.createElement('tr');
     // Only one preview plays at a time: starting one pauses whatever was playing.
@@ -228,13 +239,31 @@ function render(list){
       <td><strong style="color:var(--chrome-text-bright)">${esc(b.title)}</strong>
           <div class="dim" style="font-size:11px;margin-top:2px">${esc(b.desc)}</div></td>
       <td>${player}</td>
-      <td><div class="slots">${slots}</div></td>
+      <td>
+        <button class="expand" type="button" aria-expanded="false">
+          <span class="caret">&#9656;</span> ${b.slots.length} patches
+        </button>
+      </td>
       <td class="num" style="white-space:nowrap">
         <a class="dl" href="banks/${esc(b.file)}" download>syx</a>
         <button class="sendbank" type="button" data-bank="${esc(b.file)}"
                 data-name="${esc(b.title)}" title="Send this bank to the FM-1">send</button>
       </td>`;
     tbody.appendChild(tr);
+
+    // collapsible detail row holding the actual slot list.
+    // If the search matched a PATCH name, open it automatically -- otherwise the
+    // hit would be inside a collapsed row and the user would see nothing.
+    const patchHit = !!term && b.slots.some(n => n.toLowerCase().includes(term));
+    const det = document.createElement('tr');
+    det.className = 'detail';
+    det.hidden = !patchHit;
+    det.innerHTML = `<td colspan="4"><div class="slots">${slots}</div></td>`;
+    if(patchHit){
+      tr.querySelector('button.expand').setAttribute('aria-expanded', 'true');
+      tr.querySelector('.caret').innerHTML = '&#9662;';
+    }
+    tbody.appendChild(det);
   }
 }
 
@@ -274,6 +303,18 @@ document.addEventListener('play', e => {
   });
   stopPatchPreview();
 }, true);
+
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button.expand');
+  if(!btn) return;
+  const row = btn.closest('tr');
+  const det = row.nextElementSibling;
+  if(!det || !det.classList.contains('detail')) return;
+  const open = det.hidden;
+  det.hidden = !open;
+  btn.setAttribute('aria-expanded', String(open));
+  btn.querySelector('.caret').innerHTML = open ? '&#9662;' : '&#9656;';
+});
 
 document.addEventListener('click', async e => {
   const btn = e.target.closest('button.sendbank');
