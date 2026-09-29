@@ -19,6 +19,13 @@
   button.hear:hover { border-color: var(--accent); color: var(--accent); }
   button.hear.playing { border-color: var(--accent); color: var(--accent);
     background: var(--row-highlight); }
+  button.sendbank { background: transparent; border: 1px solid var(--chrome-border-light);
+    color: var(--chrome-text-dim); font-size: 10px; padding: 2px 7px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: .06em; margin-left: 6px; }
+  button.sendbank:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button.sendbank:disabled { opacity: .5; cursor: default; }
+  #banklog .ok { color: var(--accent); }
+  #banklog .warn { color: var(--warn); }
   #sendlog .ok { color: var(--accent); }
   #sendlog .warn { color: var(--warn); }
 </style>
@@ -69,13 +76,14 @@
               <th style="width:170px">Bank</th>
               <th style="width:170px">Preview</th>
               <th>Patches</th>
-              <th style="width:80px;text-align:right">Get</th>
+              <th style="width:120px;text-align:right">Get</th>
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
       <div class="empty" id="empty" hidden>No banks match that filter.</div>
+      <div id="banklog" style="font-size:11.5px;margin-top:8px"></div>
     </div>
   </section>
 
@@ -221,7 +229,11 @@ function render(list){
           <div class="dim" style="font-size:11px;margin-top:2px">${esc(b.desc)}</div></td>
       <td>${player}</td>
       <td><div class="slots">${slots}</div></td>
-      <td class="num"><a class="dl" href="banks/${esc(b.file)}" download>syx</a></td>`;
+      <td class="num" style="white-space:nowrap">
+        <a class="dl" href="banks/${esc(b.file)}" download>syx</a>
+        <button class="sendbank" type="button" data-bank="${esc(b.file)}"
+                data-name="${esc(b.title)}" title="Send this bank to the FM-1">send</button>
+      </td>`;
     tbody.appendChild(tr);
   }
 }
@@ -263,6 +275,29 @@ document.addEventListener('play', e => {
   stopPatchPreview();
 }, true);
 
+document.addEventListener('click', async e => {
+  const btn = e.target.closest('button.sendbank');
+  if(!btn) return;
+  const el = document.getElementById('banklog');
+  const label = btn.dataset.name;
+  const prev = btn.textContent;
+  btn.disabled = true; btn.textContent = '…';
+  el.innerHTML = `<span class="dim">fetching ${esc(label)} …</span>`;
+  try {
+    const res = await fetch('banks/' + btn.dataset.bank);
+    if(!res.ok) throw new Error('Could not fetch the bank file.');
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    el.innerHTML = `<span class="dim">sending ${esc(label)} …</span>`;
+    const dev = await sendSysex(bytes);
+    el.innerHTML = `<span class="ok">Sent <b>${esc(label)}</b> (4104 bytes) to <b>${esc(dev)}</b>. `
+      + `Pick a bank (A/B/C/D) on the FM-1, then hold SAVE.</span>`;
+  } catch(err){
+    el.innerHTML = `<span class="warn">${esc(err.message)}</span>`;
+  } finally {
+    btn.disabled = false; btn.textContent = prev;
+  }
+});
+
 q.addEventListener('input', () => {
   const s = q.value.trim().toLowerCase();
   if(!s){ render(banks); return; }
@@ -285,6 +320,30 @@ fetch('banks.json')
       data.length + ' banks · 32 voices each · ' + (data.length * 32) + ' patches';
   })
   .catch(() => { tbody.innerHTML = '<tr><td colspan="4" class="dim">Could not load banks.json</td></tr>'; });
+
+/* ── MIDI: shared by the bank table and the builder ─────────────────────── */
+let midiOut = null;
+
+async function getMidiOut(){
+  if(midiOut) return midiOut;
+  if(!navigator.requestMIDIAccess){
+    throw new Error('This browser has no WebMIDI. Use Chrome or Edge.');
+  }
+  const access = await navigator.requestMIDIAccess({sysex: true});
+  const outs = [...access.outputs.values()];
+  const fm1 = outs.find(o => /fm-?1/i.test(o.name)) || outs[0];
+  if(!fm1) throw new Error('No MIDI output found. Connect the FM-1 over USB-C.');
+  midiOut = fm1;
+  return fm1;
+}
+
+/* WebMIDI needs a COMPLETE SysEx message: F0 ... F7. Sending a bare payload
+   makes Chrome read the first data byte as running status and throw. */
+async function sendSysex(bytes){
+  const out = await getMidiOut();
+  out.send(Array.from(bytes));
+  return out.name;
+}
 
 /* ── custom bank builder ──────────────────────────────────────────────────
    A DX7 bank is 4104 bytes: F0 43 00 09 20 00, then 32 x 128 voice bytes,
@@ -434,34 +493,13 @@ function log(html, cls){
   el.innerHTML = html ? `<span class="${cls||'dim'}">${html}</span>` : '';
 }
 
-let midiOut = null;
-
-async function getMidiOut(){
-  if(midiOut) return midiOut;
-  if(!navigator.requestMIDIAccess){
-    throw new Error('This browser has no WebMIDI. Use Chrome or Edge.');
-  }
-  const access = await navigator.requestMIDIAccess({sysex: true});
-  const outs = [...access.outputs.values()];
-  const fm1 = outs.find(o => /fm-?1/i.test(o.name)) || outs[0];
-  if(!fm1) throw new Error('No MIDI output found. Connect the FM-1 over USB-C.');
-  midiOut = fm1;
-  return fm1;
-}
-
 sendBtn.addEventListener('click', async () => {
   sendBtn.disabled = true;
   log('connecting…');
   try {
-    const out = await getMidiOut();
-    const bytes = buildBank();
-    // WebMIDI needs a COMPLETE SysEx message: F0 ... F7. Sending the payload
-    // without the delimiters makes Chrome read the first data byte (0x43) as a
-    // running-status byte and throw "Running status is not allowed at index 0".
-    const msg = Array.from(bytes);
-    log(`sending to <b>${out.name}</b> …`);
-    out.send(msg);
-    log(`sent 4104 bytes to <b>${out.name}</b>. `
+    log('sending…');
+    const dev = await sendSysex(buildBank());
+    log(`sent 4104 bytes to <b>${esc(dev)}</b>. `
       + `Now pick a bank (A/B/C/D) on the FM-1, then hold SAVE.`, 'ok');
   } catch(err){
     log(err.message, 'warn');
