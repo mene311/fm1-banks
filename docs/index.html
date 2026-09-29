@@ -13,6 +13,7 @@
 <a class="logo" href="./"><span class="logo-text">fm1<strong>&#183;</strong>banks</span></a>
 <nav class="site-nav">
 <a href="#banks">Banks</a>
+<a href="#builder">Build your own</a>
 <a href="#install">Install</a>
 <a href="#format">Format</a>
 <a href="https://github.com/mene311/fm1-banks">GitHub</a>
@@ -59,6 +60,45 @@
         </table>
       </div>
       <div class="empty" id="empty" hidden>No banks match that filter.</div>
+    </div>
+  </section>
+
+  <section class="panel" id="builder">
+    <div class="panel-head">
+      <h2>Build your own</h2>
+      <span class="hint">Pick up to 32 patches from any bank, arrange them, download a ready-to-load .syx. Runs entirely in the browser.</span>
+    </div>
+    <div class="panel-body">
+      <div class="opts">
+        <label style="flex:1">
+          <input type="search" id="pq" placeholder="search 832 patches by name or bank…" autocomplete="off" spellcheck="false">
+        </label>
+        <button class="secondary" id="clear" type="button">Clear</button>
+      </div>
+      <div id="picker" style="margin-top:10px;max-height:280px;overflow:auto;border:1px solid var(--chrome-border)">
+        <table class="rows"><tbody id="pickbody"></tbody></table>
+      </div>
+      <p class="dim" style="font-size:11.5px;margin-top:8px">
+        Click a patch to add it. Fill all 32 slots for a complete bank; fewer than 32
+        leaves the remainder as empty init voices.
+      </p>
+    </div>
+  </section>
+
+  <section class="panel" id="slotpanel">
+    <div class="panel-head">
+      <h2>Your bank <span id="slotcount" class="dim" style="font-size:11px"></span></h2>
+      <span class="hint">Reorder with the arrows, or drag. Slots fill top to bottom.</span>
+    </div>
+    <div class="panel-body">
+      <ol class="steps" id="slots" style="max-height:320px;overflow:auto"></ol>
+      <div class="opts" style="margin-top:12px">
+        <label>Bank name
+          <input type="text" id="bname" value="MY BANK" maxlength="10" style="margin-left:6px;width:140px;background:var(--chrome-bg);border:1px solid var(--chrome-border);color:var(--chrome-text-bright);padding:5px 7px;font:inherit;font-size:12px">
+        </label>
+        <button id="build" type="button" disabled>Download .syx</button>
+        <span class="dim" id="buildhint" style="font-size:11.5px">Add at least one patch.</span>
+      </div>
     </div>
   </section>
 
@@ -178,6 +218,145 @@ fetch('banks.json')
       data.length + ' banks · 32 voices each · ' + (data.length * 32) + ' patches';
   })
   .catch(() => { tbody.innerHTML = '<tr><td colspan="4" class="dim">Could not load banks.json</td></tr>'; });
+
+/* ── custom bank builder ──────────────────────────────────────────────────
+   A DX7 bank is 4104 bytes: F0 43 00 09 20 00, then 32 x 128 voice bytes,
+   then one checksum, then F7. The checksum is (-sum(the 4096 voice bytes))
+   & 0x7F -- the 6-byte header is EXCLUDED, which is M-VAVE's convention and
+   the reason a textbook Yamaha checksum gets rejected as "damaged". */
+let allPatches = [];
+let chosen = [];
+
+const pickbody = document.getElementById('pickbody');
+const slotsEl  = document.getElementById('slots');
+const pq       = document.getElementById('pq');
+const slotcount= document.getElementById('slotcount');
+const buildBtn = document.getElementById('build');
+
+function b64ToBytes(b64){
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function ci(s){ return String(s).toLowerCase(); }
+
+function renderPicker(){
+  const term = ci(pq.value.trim());
+  const list = term
+    ? allPatches.filter(p => ci(p.n).includes(term) || ci(p.k).includes(term))
+    : allPatches;
+  const shown = list.slice(0, 300);
+  pickbody.innerHTML = shown.map(p => {
+    const id = p.k + '#' + p.i;
+    const on = chosen.some(c => c.id === id);
+    return `<tr class="pick" data-id="${esc(id)}" style="cursor:pointer">
+      <td style="width:34px">${on ? '<span class="ok" style="color:var(--accent)">&#10003;</span>' : '<span class="dim">+</span>'}</td>
+      <td>${esc(p.n)}</td>
+      <td class="dim" style="width:190px">${esc(p.k)}</td>
+      <td class="dim num" style="width:56px">${p.i + 1}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" class="dim">No patches match.</td></tr>';
+  if(list.length > shown.length){
+    pickbody.innerHTML += `<tr><td colspan="4" class="dim">… ${list.length - shown.length} more, refine the search</td></tr>`;
+  }
+}
+
+function renderSlots(){
+  slotcount.textContent = chosen.length + '/32';
+  buildBtn.disabled = chosen.length === 0;
+  document.getElementById('buildhint').textContent = chosen.length === 0
+    ? 'Add at least one patch.'
+    : (chosen.length === 32 ? 'Full bank.' : (32 - chosen.length) + ' empty slots will be written as init voices.');
+  const rows = [];
+  for(let i=0;i<Math.max(chosen.length, 1);i++){
+    const c = chosen[i];
+    rows.push(`<li data-i="${i}" style="cursor:default">
+      <span style="color:var(--chrome-text-bright)">${c ? esc(c.n) : '<span class="dim">(empty)</span>'}</span>
+      <span class="dim" style="font-size:11px"> · ${c ? esc(c.k) : 'init'}</span>
+      <span style="float:right">
+        <button class="secondary" data-up="${i}" type="button" style="padding:1px 7px;font-size:11px" ${i===0?'disabled':''}>&#8593;</button>
+        <button class="secondary" data-down="${i}" type="button" style="padding:1px 7px;font-size:11px" ${i>=chosen.length-1?'disabled':''}>&#8595;</button>
+        <button class="secondary" data-del="${i}" type="button" style="padding:1px 7px;font-size:11px">&#215;</button>
+      </span></li>`);
+  }
+  slotsEl.innerHTML = rows.join('');
+}
+
+function buildBank(){
+  const header = [0xF0,0x43,0x00,0x09,0x20,0x00];
+  const body = new Uint8Array(4096);
+  for(let i=0;i<32;i++){
+    if(i < chosen.length){
+      body.set(b64ToBytes(chosen[i].d), i*128);
+    }
+  }
+  let sum = 0;
+  for(const b of body) sum += b;
+  const checksum = (-sum) & 0x7F;
+  const out = new Uint8Array(4104);
+  out.set(header, 0);
+  out.set(body, 6);
+  out[4102] = checksum;
+  out[4103] = 0xF7;
+  return out;
+}
+
+pickbody.addEventListener('click', e => {
+  const tr = e.target.closest('tr.pick');
+  if(!tr) return;
+  const id = tr.dataset.id;
+  const p = allPatches.find(x => (x.k + '#' + x.i) === id);
+  if(!p) return;
+  const at = chosen.findIndex(c => c.id === id);
+  if(at >= 0){ chosen.splice(at,1); }
+  else if(chosen.length < 32){ chosen.push({id, n:p.n, k:p.k, d:p.d}); }
+  renderPicker(); renderSlots();
+});
+
+slotsEl.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.del !== undefined){ chosen.splice(+b.dataset.del, 1); }
+  if(b.dataset.up !== undefined){
+    const i = +b.dataset.up;
+    [chosen[i-1], chosen[i]] = [chosen[i], chosen[i-1]];
+  }
+  if(b.dataset.down !== undefined){
+    const i = +b.dataset.down;
+    [chosen[i+1], chosen[i]] = [chosen[i], chosen[i+1]];
+  }
+  renderPicker(); renderSlots();
+});
+
+pq.addEventListener('input', renderPicker);
+
+document.getElementById('clear').addEventListener('click', () => {
+  chosen = []; renderPicker(); renderSlots();
+});
+
+buildBtn.addEventListener('click', () => {
+  const bytes = buildBank();
+  const name = (document.getElementById('bname').value || 'MY BANK')
+    .replace(/[^\x20-\x7e]/g,'').trim() || 'MY BANK';
+  const blob = new Blob([bytes], {type:'application/octet-stream'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name.replace(/\s+/g,'_') + '.syx';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+});
+
+fetch('patches.json')
+  .then(r => r.json())
+  .then(data => {
+    allPatches = data;
+    renderPicker();
+    renderSlots();
+  })
+  .catch(() => {
+    pickbody.innerHTML = '<tr><td colspan="4" class="dim">Could not load patches.json</td></tr>';
+  });
 </script>
 </body>
 </html>
