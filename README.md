@@ -2,9 +2,9 @@
 
 26 themed banks of 32 DX7 patches each, for the M-VAVE FM-1.
 
-The FM-1 holds 128 presets, split into four banks of 32. Fill each bank from a
-different file here and the whole instrument is coherent instead of 128 random
-patches. Works on any DX7-compatible synth too, since the file format is the same.
+The FM-1 holds 128 presets as four banks of 32. Load a different file into each
+and the instrument is coherent, not 128 loose patches. The files are plain DX7
+SysEx, so they work on any DX7-compatible synth.
 
 Gallery with audio: <https://mene311.github.io/fm1-banks/>
 
