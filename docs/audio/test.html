@@ -9,17 +9,19 @@
 </div></div>
 <div class="hero"><div class="hero-inner">
 <h1>Demo render <em>test</em></h1>
-<p>Three banks rendered offline through the real Dexed engine. 32 steps, auto pitch-corrected, levelled by RMS. Pads and keys are <strong>polyphonic</strong> &mdash; the phrase holds real chords. Bass and acid stay monophonic.</p>
+<p>Four banks rendered offline through the real Dexed engine, auto pitch-corrected, levelled by RMS. Pads and keys are <strong>polyphonic with held chords</strong> &mdash; the progression changes once per bar (verified by onset detection), not on every 16th. Bass and acid stay monophonic.</p>
 </div></div>
 <main>
 <section class="panel" id="bank-audio">
   <div class="panel-head"><h2>Players</h2><span class="hint">Inline, no JS needed.</span></div>
   <div class="panel-body">
     <div class="table-wrap"><table class="rows"><tbody>
-      <tr><td style="width:240px"><strong style="color:var(--chrome-text-bright)">Synthwave Pad</strong><br><span class="dim" style="font-size:11px">Your Pad &middot; +0.0 oct &middot; Am&ndash;F&ndash;C&ndash;G chords</span></td>
+      <tr><td style="width:240px"><strong style="color:var(--chrome-text-bright)">Synthwave Pad</strong><br><span class="dim" style="font-size:11px">Your Pad &middot; +0.0 oct &middot; 8-bar chord progression, 17s</span></td>
           <td><audio controls preload="none" src="FM-1_synthwave_pad.mp3" style="width:100%"></audio></td></tr>
-      <tr><td><strong style="color:var(--chrome-text-bright)">Piano &amp; E.Piano</strong><br><span class="dim" style="font-size:11px">t/piano pd &middot; +1.0 oct &middot; Cmaj7&ndash;Am7&ndash;Dm7&ndash;G7 chords</span></td>
+      <tr><td><strong style="color:var(--chrome-text-bright)">Piano &amp; E.Piano</strong><br><span class="dim" style="font-size:11px">t/piano pd &middot; +1.0 oct &middot; Cmaj7&ndash;Am7&ndash;Dm7&ndash;G7, 17s</span></td>
           <td><audio controls preload="none" src="FM-1_piano_ep.mp3" style="width:100%"></audio></td></tr>
+      <tr><td><strong style="color:var(--chrome-text-bright)">Drums &amp; Percussion</strong><br><span class="dim" style="font-size:11px">auto-picked patch &middot; chord stabs, 5s</span></td>
+          <td><audio controls preload="none" src="FM-1_drums_perc.mp3" style="width:100%"></audio></td></tr>
       <tr><td><strong style="color:var(--chrome-text-bright)">Synthwave Bass</strong><br><span class="dim" style="font-size:11px">T.JUNO 109 &middot; +1.0 oct corrected &middot; mono</span></td>
           <td><audio controls preload="none" src="FM-1_synthwave_bass.mp3" style="width:100%"></audio></td></tr>
     </tbody></table></div>

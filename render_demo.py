@@ -28,81 +28,93 @@ REF_HZ = 261.63
 
 
 # ── phrases, per theme ───────────────────────────────────────────────────────
-# Each step is a LIST of (semitone_offset, velocity) notes. Polyphony comes from
-# putting several notes in one step (chords); a rest is an empty list.
-# Offsets are relative to the phrase root. 16 steps, doubled to 32 for the loop.
+# A step is (notes, hold):
+#   notes = list of (semitone_offset, velocity) -- several notes = a chord
+#   hold  = how many 16th-steps the note is HELD (sustained), 1 = a 16th, 4 = a beat,
+#           8 = a half bar, 16 = a bar. Chords are held across steps, not retriggered.
+# A rest is ([], 1). 16 step-slots make one bar at 16ths; the phrase is doubled.
 #
 # Chord vocabulary (semitones from root):
 #   m   = [0,3,7]      M   = [0,4,7]      m7  = [0,3,7,10]
 #   M7  = [0,4,7,11]   sus4= [0,5,7]      add9= [0,4,7,14]
+#    7  = [0,4,7,10]   m9  = [0,3,7,10,14]
 PHRASES: dict[str, dict] = {
     # ── monophonic: bass lines and acid ──
     "bass": {
         "root": 45,  # A2
-        "steps": [[(0,110)],[(0,70)],[(12,110)],[(0,85)],[(3,100)],[(0,60)],
-                  [(0,110)],[(15,90)],[(0,100)],[(0,75)],[(10,110)],[(0,80)],
-                  [(7,95)],[(0,65)],[(0,105)],[(5,88)]],
+        "steps": [([(0,110)],1),([(0,70)],1),([(12,110)],1),([(0,85)],1),
+                  ([(3,100)],1),([(0,60)],1),([(0,110)],1),([(15,90)],1),
+                  ([(0,100)],1),([(0,75)],1),([(10,110)],1),([(0,80)],1),
+                  ([(7,95)],1),([(0,65)],1),([(0,105)],1),([(5,88)],1)],
     },
     "acid": {
         "root": 45,
-        "steps": [[(0,110)],[(0,70)],[(12,110)],[(0,85)],[(3,100)],[(0,60)],
-                  [(0,110)],[(15,90)],[(0,100)],[(0,75)],[(10,110)],[(0,80)],
-                  [(7,95)],[(0,65)],[(0,105)],[(5,88)]],
+        "steps": [([(0,110)],1),([(0,70)],1),([(12,110)],1),([(0,85)],1),
+                  ([(3,100)],1),([(0,60)],1),([(0,110)],1),([(15,90)],1),
+                  ([(0,100)],1),([(0,75)],1),([(10,110)],1),([(0,80)],1),
+                  ([(7,95)],1),([(0,65)],1),([(0,105)],1),([(5,88)],1)],
     },
     "lead": {
         "root": 57,
-        "steps": [[(0,110)],[(2,95)],[(4,100)],[(7,105)],[(9,95)],[(12,110)],
-                  [(7,90)],[(4,85)],[(0,105)],[(2,90)],[(5,100)],[(7,95)],
-                  [(12,110)],[(10,90)],[(7,85)],[(4,80)]],
+        "steps": [([(0,110)],2),([(2,95)],1),([(4,100)],2),([(7,105)],1),
+                  ([(9,95)],2),([(12,110)],2),([(7,90)],1),([(4,85)],1),
+                  ([(0,105)],2),([(2,90)],1),([(5,100)],2),([(7,95)],1),
+                  ([(12,110)],2),([(10,90)],1),([(7,85)],1),([(4,80)],2)],
     },
-    # ── polyphonic: pads hold chords, slowly ──
-    # Am - F - C - G  (i - VI - III - VII), 4 steps per chord.
+    # ── polyphonic: pad chords, changing every HALF BEAT (2 steps) ──
+    # i - VI - III - VII - iv - i - V - i  (Am F C G Dm Am E Am)
     "pad": {
         "root": 57,  # A3
-        "steps": [[(0,88),(3,84),(7,82),(12,70)],          # Am
-                  [(0,86),(3,83),(7,81),(12,69)],
-                  [(0,86),(3,83),(7,81),(12,69)],
-                  [(0,84),(3,82),(7,80),(12,68)],
-                  [(-4,88),(-1,84),(2,82),(7,70)],         # F
-                  [(-4,86),(-1,83),(2,81),(7,69)],
-                  [(-4,86),(-1,83),(2,81),(7,69)],
-                  [(-4,84),(-1,82),(2,80),(7,68)],
-                  [(3,88),(7,84),(10,82),(15,70)],         # C
-                  [(3,86),(7,83),(10,81),(15,69)],
-                  [(3,86),(7,83),(10,81),(15,69)],
-                  [(3,84),(7,82),(10,80),(15,68)],
-                  [(-2,88),(2,84),(5,82),(10,70)],         # G
-                  [(-2,86),(2,83),(5,81),(10,69)],
-                  [(-2,86),(2,83),(5,81),(10,69)],
-                  [(-2,84),(2,82),(5,80),(10,68)]],
+        # Am - F - C - G - Dm - Am - E - Am. Each chord HELD a full bar
+        # (16 sixteenths), wrapped in a chord voicing with the root up an octave.
+        "steps": [
+            ([(0,86),(3,84),(7,82),(12,72)], 16),   # Am
+            ([(-4,84),(-1,82),(2,80),(7,70)], 16),  # F
+            ([(3,86),(7,84),(10,82),(15,72)], 16),  # C
+            ([(-2,84),(2,82),(5,80),(10,70)], 16),  # G
+            ([(5,84),(8,82),(12,80),(17,72)], 16),  # Dm
+            ([(0,86),(3,84),(7,82),(12,74)], 16),   # Am
+            ([(7,84),(11,82),(14,80),(19,72)], 16), # E
+            ([(0,82),(3,80),(7,78),(12,68)], 16),   # Am (resolve)
+        ],
     },
-    # ── polyphonic: keys comp chords in a rhythm ──
-    # Cmaj7 - Am7 - Dm7 - G7
+    # ── polyphonic: keys comp with syncopation, chord per beat/half-beat ──
+    # Cmaj7 - Am7 - Dm7 - G7, with off-beat stabs.
     "keys": {
         "root": 48,  # C3
-        "steps": [[(0,100),(4,92),(7,90),(11,80)],         # Cmaj7
-                  [],
-                  [(12,88),(16,82),(19,80),(23,70)],
-                  [],
-                  [(0,96),(4,88),(7,86),(11,76)],          # Cmaj7 up
-                  [],
-                  [(12,84),(16,78),(19,76),(23,66)],
-                  [],
-                  [(9,100),(12,92),(16,90),(21,80)],       # Am7  (A=C+9)
-                  [],
-                  [(21,88),(24,82),(28,80),(33,70)],
-                  [],
-                  [(2,96),(5,88),(9,86),(12,76)],          # Dm7
-                  [(0,84),(4,78),(7,76),(11,66)],          # G7
-                  [],
-                  [(0,100),(4,92),(7,90),(11,80)]],        # Cmaj7
+        # Cmaj7 - Am7 - Dm7 - G7, one chord per bar, HELD 16 sixteenths.
+        # (A comping rhythm was tried first, but a held progression reads clearer
+        #  as a demo and avoids retriggering the same chord every 16th.)
+        "steps": [
+            ([(0,100),(4,92),(7,90),(11,80)], 16),    # Cmaj7
+            ([(9,96),(12,90),(16,88),(21,80)], 16),   # Am7
+            ([(2,100),(5,94),(9,90),(12,80)], 16),    # Dm7
+            ([(-3,96),(0,90),(2,86),(7,76)], 16),     # G7
+            ([(0,100),(4,92),(7,90),(11,80)], 16),    # Cmaj7
+            ([(9,96),(12,90),(16,88),(21,80)], 16),   # Am7
+            ([(2,100),(5,94),(9,90),(12,80)], 16),    # Dm7
+            ([(-3,96),(0,90),(2,86),(7,76)], 16),     # G7
+        ],
     },
-    # ── percussive: still chords, short and stabby ──
+    # ── percussive: chord stabs on beats/half-beats, short hold ──
     "perc": {
         "root": 48,
-        "steps": [[(0,115),(7,100)],[],[(12,80)],[],[(3,105),(7,95)],[],
-                  [(7,88)],[],[(0,110),(5,98)],[],[(15,82)],[],[(10,98),(14,90)],
-                  [],[(5,85)],[(0,100)]],
+        "steps": [([(0,116),(7,102)], 2),
+                  ([], 2),
+                  ([(12,86),(19,78)], 2),
+                  ([], 2),
+                  ([(3,106),(10,96)], 2),
+                  ([], 2),
+                  ([(7,92),(12,84)], 2),
+                  ([], 2),
+                  ([(0,112),(5,100)], 2),
+                  ([], 2),
+                  ([(15,88)], 2),
+                  ([], 2),
+                  ([(10,104),(14,94)], 2),
+                  ([], 2),
+                  ([(5,90)], 2),
+                  ([], 2)],
     },
 }
 
@@ -149,23 +161,37 @@ def render_phrase(patch, offset_oct: float, phrase: dict) -> np.ndarray:
     s = DexedSynth(sample_rate=SR)
     s.load_patch(patch)
 
-    steps = phrase["steps"] * (STEPS // len(phrase["steps"]))
+    # Repeat the phrase so the loop reads as a loop, but keep the preview short:
+    # target ~2 bars of 16ths (STEPS steps) per rep, and at most 2 reps.
+    base = phrase["steps"]
+    base_len = sum(h for _, h in base) or 1
+    reps = max(1, min(2, round(STEPS / base_len) or 1))
+    steps = base * reps
     root = phrase["root"] + int(offset_oct * 12)   # correct the patch's offset
 
-    total = int(SR * STEP * len(steps)) + SR
+    # total length = sum of all holds (in 16th steps), plus a tail
+    total_steps = sum(hold for _, hold in steps)
+    total = int(SR * STEP * total_steps) + SR
     out = np.zeros(total, dtype=np.float32)
+
     # per-note gain: chords stack, so keep headroom proportional to chord size
-    poly = max((len(step) for step in steps), default=1)
+    poly = max((len(notes) for notes, _ in steps), default=1)
     vgain = 1.0 / max(1.0, poly ** 0.65)
-    for i, step in enumerate(steps):
-        if not step:
-            continue
-        st = int(i * SR * STEP)
-        for semi, vel in step:
-            a = s.render(midi_note=root + semi, velocity=vel,
-                         note_duration=STEP * 0.95, render_duration=STEP * 1.0)
-            en = min(st + len(a), total)
-            out[st:en] += a[:en - st] * vgain
+
+    pos = 0                       # running position in 16th steps
+    for notes, hold in steps:
+        if notes:
+            st = int(pos * SR * STEP)
+            # a held chord is rendered ONCE and sustained; release just before the
+            # next event so chords ring rather than retrigger every 16th
+            dur = STEP * hold
+            for semi, vel in notes:
+                a = s.render(midi_note=root + semi, velocity=vel,
+                             note_duration=dur,
+                             render_duration=dur + STEP * 0.5)
+                en = min(st + len(a), total)
+                out[st:en] += a[:en - st] * vgain
+        pos += hold
 
     out -= out.mean()                       # DC block
     rms = float(np.sqrt((out ** 2).mean()))
