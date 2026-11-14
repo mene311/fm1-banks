@@ -162,3 +162,5 @@ Boxes, Bobby Blues, and assorted community archives. Whoever programmed each pat
 originally still owns it; this repo only sorts them into banks and reformats them.
 
 The scripts are MIT, see `LICENSE`.
+
+Related: try FM-1 firmwares in the browser with the free community [FM-1 Emulator](https://fm1-emulator.atst.tools/).
